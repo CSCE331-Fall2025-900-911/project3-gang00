@@ -38,6 +38,10 @@ app.get('/employee-sign-in', (req, res) => {
     res.render('employeeSignIn');
 });
 
+app.get('/manager-sign-in', (req, res) => {
+    res.render('managerSignIn');
+});
+
 app.get('/user', (req, res) => {
     teammembers = []
     pool
