@@ -34,6 +34,14 @@ app.get('/', (req, res) => {
     res.render('index', data);
 });
 
+app.get('/employee-sign-in', (req, res) => {
+    res.render('employeeSignIn');
+});
+
+app.get('/manager-sign-in', (req, res) => {
+    res.render('managerSignIn');
+});
+
 app.get('/user', (req, res) => {
     teammembers = []
     pool
