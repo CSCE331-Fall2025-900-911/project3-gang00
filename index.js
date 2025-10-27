@@ -1,6 +1,7 @@
 const express = require('express');
 const { Pool } = require('pg');
 const dotenv = require('dotenv').config();
+const path = require('path');
 
 // Create express app
 const app = express();
@@ -22,6 +23,9 @@ process.on('SIGINT', function() {
     console.log('Application successfully shutdown');
     process.exit(0);
 });
+
+// Serve static files from the "public" folder
+app.use(express.static(path.join(__dirname, 'public')));
 	 	 	 	
 app.set("view engine", "ejs");
 
