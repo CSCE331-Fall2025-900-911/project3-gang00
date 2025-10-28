@@ -38,7 +38,7 @@ process.on('SIGINT', async () => {
 
 // Redirect home to /menu so you see the menu immediately
 app.get('/', (req, res) => {
-  res.redirect('/menu');
+  res.render('index');
 });
 
 // Employee sign in
