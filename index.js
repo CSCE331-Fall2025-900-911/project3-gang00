@@ -89,7 +89,6 @@ app.get('/user', async (req, res) => {
 
 // ---- Menu (sample items) ----
 app.get('/menu', (req, res) => {
-  console.log('>>> rendering /menu');
   const items = [
     { id: 1, name: 'Classic Milk Tea', price: 4.50, img: '/img/milk-tea.jpg', tags: ['tea', 'dairy'], calories: 220 },
     { id: 2, name: 'Taro Smoothie',   price: 5.25, img: '/img/taro.jpg',      tags: ['smoothie'],     calories: 300 },

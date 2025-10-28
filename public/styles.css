@@ -80,18 +80,49 @@ body {
     transform: scale(2);
 }
 
+.center-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    height: 100vh;
+}
 
-
-.helpPageTitle{
+.center-container .menu-button {
+    padding: 1.5rem 3rem;
+    font-size: 1.5rem;
+    border: none;
+    border-radius: 5px;
+    background-color: #ffdddd;
+    color: rgb(0, 0, 0);
+    cursor: pointer;
+    text-decoration: none;
     text-align: center;
+    transition: background-color 0.3s;
 }
 
-.searchFAQ{
-    text-align:center;
+.center-container .menu-button:hover {
+    background-color: #ffbbbb;
 }
 
-.faq{
-    margin-top: 10px;
+.cancel-order {
+    position: fixed;
+    bottom: 1rem;
+    left: 1rem;
+    display: inline-block;
+    margin-top: 20px;
+    padding: 2rem 3rem;
+    font-size: 1.5rem;
+    background-color: #ffdddd;
+    color: black;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+.cancel-order:hover {
+    background-color: #ffbbbb;
 }
 
 .contactGrid { 
