@@ -55,9 +55,10 @@ body {
 
 .center-container {
     display: flex;
+    flex-direction: column; /* Arrange buttons in a column */
     justify-content: center;
     align-items: center;
-    gap: 1rem; /* Space between buttons */
+    gap: 1rem; /* Space between rows */
     height: 50vh; /* Full viewport height to center vertically */
 }
 
@@ -75,5 +76,37 @@ body {
 }
 
 .center-container .menu-button:hover {
+    background-color: #ffbbbb;
+}
+
+.button-1 {
+    margin-top: 0;
+}
+
+.button-2 {
+    margin-top: 2rem;
+}
+
+.button-3{
+    margin-top: 4rem;
+}
+
+.cancel-order {
+    position: fixed;
+    bottom: 0.5rem;
+    left: 0.5rem;
+    padding: 2rem 4rem;
+    font-size: 1.75rem;
+    border: none;
+    border-radius: 5px;
+    background-color: #ffdddd;
+    color: rgb(0, 0, 0);
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+    transition: background-color 0.3s;
+}
+
+.cancel-order:hover {
     background-color: #ffbbbb;
 }

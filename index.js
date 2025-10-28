@@ -60,6 +60,14 @@ app.get('/user', (req, res) => {
         });
 });
 
+app.get('/order', (req, res) => {
+    res.render('order');
+});
+
+app.get('/menu', (req, res) => {
+    res.render('menu');
+});
+
 app.listen(port, () => {
     console.log(`Example app listening at http://localhost:${port}`);
 });
