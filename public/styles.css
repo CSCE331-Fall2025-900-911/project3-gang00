@@ -1,23 +1,36 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Importing Poppins font */
+.poppins-regular {
+  font-family: "Poppins", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+body {
+  font-family: "Poppins", sans-serif;
+}
+
 /* Navbar container */
 .navbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
     background-color: #ffdddd;
-    padding: 0.5rem 1rem;
+    /* background-color: white; */
+    padding: 1.3rem 1rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-/* Logo styling
-.logo {
-    color: white;
-    font-size: 1.5rem;
-    font-weight: bold;
-} */
-
 .logo-img {
-    height: 40px; /* adjust as needed */
+    height: 50px;
     width: auto;
     display: block;
+    padding-left: 20px;
 }
 
 /* Navigation links */
@@ -25,6 +38,7 @@
     list-style: none;
     display: flex;
     gap: 1rem;
+    padding-right: 20px;
 }
 
 .nav-links li a {
