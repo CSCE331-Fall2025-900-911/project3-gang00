@@ -21,6 +21,11 @@
                 <li><a href="/manager-sign-in">Manager Sign In</a></li>
                 <li><a href="/help">Help</a></li>
                 <li><a href="/contact">Contact</a></li>
+                <li>
+                    <button class="speaker-btn" id="textToSpeechBtn">
+                        <img src="/Muted.png" alt="Text-to-Speech" class="TextToSpeech-img" id="speakerImg">
+                      </button>
+                </li>
             </ul>
         </nav>
         <div class="center-container">
@@ -28,3 +33,23 @@
             <a href="/menu" class="menu-button">View Menu</a>
         </div>
 </body>
+
+<script>
+    const speakerBtn = document.getElementById("textToSpeechBtn");
+    const speakerImg = document.getElementById("speakerImg");
+  
+    let ttsOn = false; // keeps track of whether it's active
+  
+    speakerBtn.addEventListener("click", () => {
+      ttsOn = !ttsOn; // toggle the boolean
+      speakerBtn.classList.toggle("toggled", ttsOn);
+  
+      if (ttsOn) {
+        speakerImg.src = "/speaker.png";
+        speakerImg.alt = "Text-to-Speech On";
+      } else {
+        speakerImg.src = "/Muted.png";
+        speakerImg.alt = "Text-to-Speech Off";
+      }
+    });
+  </script>
