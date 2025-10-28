@@ -64,3 +64,7 @@ body {
 .faq{
     margin-top: 10px;
 }
+
+.contactGrid { 
+    display: grid; gap: .75rem; 
+}

@@ -43,6 +43,13 @@ app.get('/manager-sign-in', (req, res) => {
 });
 
 app.get('/help', (req, res) => {
+    //site object for supportcontact
+    const site = {
+    brand: 'Sharetea',
+    supportEmail: 'support@sharetea.mcgowan',
+    supportPhone: '(555) 123-4567',
+    supportHours: 'Daily 10 AM - 8 PM'
+  };
 
     //list of faq questions to render
     const faqs = [
@@ -56,7 +63,7 @@ app.get('/help', (req, res) => {
       a: 'Common allergens are listed on each product page; cross-contact may occur.' }
   ];
 
-    res.render('help', {faqs});
+    res.render('help', {faqs, site});
 });
 
 app.get('/user', (req, res) => {

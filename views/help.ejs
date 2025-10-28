@@ -46,6 +46,29 @@
             </div>
             </section>
         </div>
+
+        <!--Contact Us Section-->
+        <section>
+        <h2>Contact Us</h2>
+        <div class="contactUs">
+
+            <div><strong>Email:</strong> <a href="mailto:<%= site.supportEmail %>"><%= site.supportEmail %></a></div>
+            <div><strong>Phone:</strong> <a href="tel:+15551234567"><%= site.supportPhone %></a></div>
+            <div><strong>Support Hours:</strong> <%= site.supportHours %></div>
+
+            <br />
+
+            <form action="/contact" method="POST" class="contactGrid">
+
+            <input type="text" name="name" placeholder="Your name" required />
+            <input type="email" name="email" placeholder="Your email" required />
+            <textarea name="message" placeholder="How can we help?" rows="4" required></textarea>
+            <button type="submit">Send Message</button>
+
+            </form>
+        </div>
+        </section>
+
     </main>
 
 
