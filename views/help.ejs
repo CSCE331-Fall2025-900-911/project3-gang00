@@ -23,8 +23,30 @@
             </ul>
         </nav>
     </div>
-    <div>
+    <div class="helpPageTitle">
         <h1>Help Page</h1>
     </div>
+
+    <!--Start of FAQ section -->
+    <main>
+        <div class="searchFAQ">
+            <section>
+            <h2>Frequently Asked Questions</h2>
+            <div id="faqList">
+                <% faqs.forEach((item, i) => { %>
+                <details class="faq">
+                    <summary>
+                        <%= item.q %>
+                    </summary>
+                    <div class="muted">
+                        <%= item.a %>
+                    </div>
+                </details>
+                <% }) %>
+            </div>
+            </section>
+        </div>
+    </main>
+
 
 </body>

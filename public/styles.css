@@ -52,3 +52,15 @@ body {
     background-color: #ffbbbb; /* hover effect */
     border-radius: 5px;
 }
+
+.helpPageTitle{
+    text-align: center;
+}
+
+.searchFAQ{
+    text-align:center;
+}
+
+.faq{
+    margin-top: 10px;
+}
