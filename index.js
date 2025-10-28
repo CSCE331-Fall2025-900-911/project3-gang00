@@ -42,6 +42,10 @@ app.get('/manager-sign-in', (req, res) => {
     res.render('managerSignIn');
 });
 
+app.get('/help', (req, res) => {
+    res.render('help');
+});
+
 app.get('/user', (req, res) => {
     teammembers = []
     pool
