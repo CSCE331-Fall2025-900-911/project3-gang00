@@ -56,14 +56,14 @@ body {
 .center-container {
     display: flex;
     flex-direction: column; /* Arrange buttons in a column */
-    justify-content: center;
-    align-items: center;
+    justify-content: center; /* Center vertically */
+    align-items: center; /* Center horizontally */
     gap: 1rem; /* Space between rows */
-    height: 50vh; /* Full viewport height to center vertically */
+    height: 100vh; /* Full viewport height */
 }
 
 .center-container .menu-button {
-    padding: 3rem 6rem;
+    padding: 1rem 2rem;
     font-size: 1.5rem;
     border: none;
     border-radius: 5px;
@@ -79,31 +79,14 @@ body {
     background-color: #ffbbbb;
 }
 
-.button-1 {
-    margin-top: 0;
-}
-
-.button-2 {
-    margin-top: 2rem;
-}
-
-.button-3{
-    margin-top: 4rem;
-}
-
 .cancel-order {
-    position: fixed;
-    bottom: 0.5rem;
-    left: 0.5rem;
-    padding: 2rem 4rem;
-    font-size: 1.75rem;
-    border: none;
-    border-radius: 5px;
+    display: inline-block;
+    margin-top: 20px;
+    padding: 10px 20px;
     background-color: #ffdddd;
-    color: rgb(0, 0, 0);
-    cursor: pointer;
+    color: black;
     text-decoration: none;
-    text-align: center;
+    border-radius: 5px;
     transition: background-color 0.3s;
 }
 
