@@ -43,7 +43,20 @@ app.get('/manager-sign-in', (req, res) => {
 });
 
 app.get('/help', (req, res) => {
-    res.render('help');
+
+    //list of faq questions to render
+    const faqs = [
+    { q: 'How do I place an order?',
+      a: 'Go to the Order page, pick items, customize, and checkout.' },
+    { q: 'Do you offer delivery?',
+      a: 'Yes. Delivery availability depends on your location and local partners.' },
+    { q: 'Can I customize my drink?',
+      a: 'Absolutely—choose sweetness, ice level, size, and toppings during checkout.' },
+    { q: 'Are allergen details available?',
+      a: 'Common allergens are listed on each product page; cross-contact may occur.' }
+  ];
+
+    res.render('help', {faqs});
 });
 
 app.get('/user', (req, res) => {
