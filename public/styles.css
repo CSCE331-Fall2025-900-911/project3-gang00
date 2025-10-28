@@ -38,3 +38,28 @@
     background-color: #ffbbbb; /* hover effect */
     border-radius: 5px;
 }
+
+.center-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem; /* Space between buttons */
+    height: 50vh; /* Full viewport height to center vertically */
+}
+
+.center-container .menu-button {
+    padding: 3rem 6rem;
+    font-size: 1.5rem;
+    border: none;
+    border-radius: 5px;
+    background-color: #ffdddd;
+    color: rgb(0, 0, 0);
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+    transition: background-color 0.3s;
+}
+
+.center-container .menu-button:hover {
+    background-color: #ffbbbb;
+}
