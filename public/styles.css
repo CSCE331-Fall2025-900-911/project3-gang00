@@ -40,6 +40,7 @@ body {
     display: flex;
     gap: 1rem;
     padding-right: 20px;
+    align-items: center;
 }
 
 .nav-links li a {
@@ -120,4 +121,79 @@ input:focus{
   color:white;
   box-shadow:0 6px 16px rgba(37,99,235,0.18);
   margin-top:4px;
+}
+
+.speaker-btn {
+    background: #ffdddd;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    line-height: 1;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+  }
+
+.TextToSpeech-img {
+    width: 40px;
+    height: auto;
+    object-fit: contain;
+    display: block;
+    filter: brightness(0) saturate(100%) invert(0%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(90%) contrast(100%);
+    transition: filter 0.3s ease;
+}
+
+.speaker-btn.toggled .TextToSpeech-img {
+    transform: scale(2);
+}
+
+.center-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    height: 100vh;
+}
+
+.center-container .menu-button {
+    padding: 1.5rem 3rem;
+    font-size: 1.5rem;
+    border: none;
+    border-radius: 5px;
+    background-color: #ffdddd;
+    color: rgb(0, 0, 0);
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+    transition: background-color 0.3s;
+}
+
+.center-container .menu-button:hover {
+    background-color: #ffbbbb;
+}
+
+.cancel-order {
+    position: fixed;
+    bottom: 1rem;
+    left: 1rem;
+    display: inline-block;
+    margin-top: 20px;
+    padding: 2rem 3rem;
+    font-size: 1.5rem;
+    background-color: #ffdddd;
+    color: black;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+.cancel-order:hover {
+    background-color: #ffbbbb;
+}
+
+.contactGrid { 
+    display: grid; gap: .75rem; 
 }
