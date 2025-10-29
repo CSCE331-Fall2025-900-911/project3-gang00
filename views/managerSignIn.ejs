@@ -8,6 +8,36 @@
 </head>
 <body>
     <div>
-        <h1>Manager Sign In Page</h1>
+        <nav class="navbar">
+            <div class="logo">
+                <a href="/">
+                    <img src="/ShareTea_logo.webp" alt="ShareTea Logo" class="logo-img">
+                </a>
+            </div>
+            <ul class="nav-links">
+                <li><a href="/">Back To Kiosk</a></li>
+            </ul>
+        </nav>
+        <div class="signin-container">
+            <section class="signin-card" aria-labelledby="signin-title">
+                <div class="brand"> 
+                    <h1 id="signin-title">Manger Sign-In Page</h1>
+                    <p class="subtitle">Sign in to continue to the manager interface</p>
+                </div>
+
+                <form id="signin-form" class="form" novalidate>
+                    <label for="username" class="visually-hidden">User Name</label>
+                    <input id="username" name="username" type="username" placeholder="User Name" />
+
+                    <label for="password" class="visually-hidden">Password</label>
+                    <div class="password-row">
+                        <input id="password" name="password" type="password" placeholder="Password" />
+                    </div>
+
+                    <button type="submit" class="primary">Sign in</button>
+                </form>
+            </section>
+        </div>
     </div>
+    <script src="/managerSignIn.js"></script>
 </body>
