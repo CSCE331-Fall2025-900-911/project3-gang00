@@ -46,11 +46,6 @@ app.get('/employee-sign-in', (req, res) => {
   res.render('employeeSignIn');
 });
 
-// Manager sign in
-app.get('/manager-sign-in', (req, res) => {
-  res.render('managerSignIn');
-});
-
 // Help
 app.get('/help', (req, res) => {
     //site object for supportcontact
