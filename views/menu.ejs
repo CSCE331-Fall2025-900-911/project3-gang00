@@ -38,12 +38,12 @@
 
     <section class="menu-grid" aria-label="Drinks list">
       <% items.forEach(item => { %>
-        <article class="card" tabindex="0" aria-labelledby="title-<%= item.id %>">
-          <img src="<%= item.img %>" alt="<%= item.name %>" />
-          <h3 id="title-<%= item.id %>"><%= item.name %></h3>
-          <div class="tags"><%= item.tags.join(' · ') %> · <%= item.calories %> cal</div>
-          <p class="price">$<%= item.price.toFixed(2) %></p>
-          <button class="add-btn" type="button" data-id="<%= item.id %>">Add</button>
+        <article class="card" tabindex="0" aria-labelledby="title-<%= item.product_id %>">
+          <img src="<%= item.img %>" alt="<%= item.product_name %>" />
+          <h3 id="title-<%= item.product_id %>"><%= item.product_name %></h3>
+          <div class="tags"><%= item.category_id %></div>
+          <p class="price">$<%= item.product_price.toFixed(2) %></p>
+          <button class="add-btn" type="button" data-id="<%= item.product_id %>">Add</button>
         </article>
       <% }) %>
     </section>
