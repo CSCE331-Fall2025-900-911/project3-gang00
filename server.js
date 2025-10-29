@@ -46,10 +46,17 @@ app.get('/employee-sign-in', (req, res) => {
   res.render('employeeSignIn');
 });
 
-// Manager sign in
-app.get('/manager-sign-in', (req, res) => {
-  res.render('managerSignIn');
+// General Sign in
+app.get('/general-sign-in', (req, res) => {
+  res.render('generalSignIn');
 });
+
+// Customer Sign in
+app.get('/customer-sign-in', (req, res) => {
+  res.render('customerSignIn');
+});
+
+
 
 // Help
 app.get('/help', (req, res) => {
