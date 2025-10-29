@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<head>
+    <title>Contact</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div>
+        <!-- <h1>ShareTea</h1> -->
+        <nav class="navbar">
+            <div class="logo">
+                <a href="/">
+                    <img src="/ShareTea_logo.webp" alt="ShareTea Logo" class="logo-img">
+                </a>
+            </div>
+            <ul class="nav-links">
+                <li><a href="/menu">Menu</a></li>
+                <li><a href="/general-Sign-In">Sign in</a></li>
+                <li><a href="/help">Help</a></li>
+                <li><a href="/contact">Contact</a></li>
+            </ul>
+        </nav>
+    </div>
+    <div class="ContactTitle">
+        <h1>Contact Us</h1>
+    </div>
+
+    <main>
+        <!--Contact Us Section-->
+        <section>
+        <h2>Contact Us</h2>
+        <div class="contactUs">
+            <div><strong>Email:</strong> <a href="mailto:<%= site.supportEmail %>"><%= site.supportEmail %></a></div>
+            <div><strong>Phone:</strong> <a href="tel:+15551234567"><%= site.supportPhone %></a></div>
+            <div><strong>Support Hours:</strong> <%= site.supportHours %></div>
+            <div><strong>Address: </strong><%= site.address%></div>
+        </div>
+        </section>
+
+    </main>
+
+
+</body>

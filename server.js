@@ -83,6 +83,20 @@ app.get('/help', (req, res) => {
     res.render('help', {faqs, site});
 });
 
+// Contact
+app.get('/contact', (req, res) => {
+
+    //site object for supportcontact
+    const site = {
+      brand: 'Sharetea',
+      supportEmail: 'support@sharetea.mcgowan',
+      supportPhone: '(555) 123-4567',
+      supportHours: 'Daily 10 AM - 8 PM',
+      address: 'Zachry Engineering Center125 Spence St, College Station, TX 77840'
+    };
+    res.render('contact', {site});
+});
+
 // Example DB page
 app.get('/user', async (req, res) => {
   try {
