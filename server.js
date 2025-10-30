@@ -145,6 +145,20 @@ app.post('/employee-sign-up/attempt', async (req, res) => {
   }
 });
 
+// Contact
+app.get('/contact', (req, res) => {
+
+    //site object for supportcontact
+    const site = {
+      brand: 'Sharetea',
+      supportEmail: 'support@sharetea.mcgowan',
+      supportPhone: '(555) 123-4567',
+      supportHours: 'Daily 10 AM - 8 PM',
+      address: 'Zachry Engineering Center125 Spence St, College Station, TX 77840'
+    };
+    res.render('contact', {site});
+});
+
 // Example DB page
 app.get('/user', async (req, res) => {
   try {
@@ -157,14 +171,18 @@ app.get('/user', async (req, res) => {
 });
 
 // ---- Menu (sample items) ----
-app.get('/menu', (req, res) => {
-  const items = [
-    { id: 1, name: 'Classic Milk Tea', price: 4.50, img: '/img/milk-tea.jpg', tags: ['tea', 'dairy'], calories: 220 },
-    { id: 2, name: 'Taro Smoothie',   price: 5.25, img: '/img/taro.jpg',      tags: ['smoothie'],     calories: 300 },
-    { id: 3, name: 'Mango Green Tea', price: 4.75, img: '/img/mango.jpg',     tags: ['tea', 'fruit'], calories: 180 },
-    { id: 4, name: 'Thai Tea',        price: 4.95, img: '/img/thai.jpg',      tags: ['tea', 'dairy'], calories: 260 }
-  ];
-  res.render('menu', { items });
+app.get('/menu', async (req, res) => {
+    const { rows } = await pool.query(
+      'SELECT * FROM products;'
+    );
+    const items = rows.map(r => ({
+      product_id: r.product_id,
+      product_name: r.product_name,
+      product_price: Number(r.product_price),
+      category_id: r.category_id,
+    }));
+
+    res.render('menu', { items });
 });
 
 app.get('/user', (req, res) => {
