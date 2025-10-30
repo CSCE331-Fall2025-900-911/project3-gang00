@@ -25,41 +25,42 @@
   </style>
 </head>
 <body>
-
-  <main class="menu-container">
-    <div class="toolbar" role="region" aria-label="Menu controls">
-      <h1>Menu</h1>
-      <div>
-        <button id="fontUp"  type="button" aria-label="Increase font size">A+</button>
-        <button id="fontDown" type="button" aria-label="Decrease font size">A−</button>
-        <button id="contrast" type="button" aria-label="Toggle high contrast">High Contrast</button>
+  <div>
+    <main class="menu-container">
+      <div class="toolbar" role="region" aria-label="Menu controls">
+        <h1>Menu</h1>
+        <div>
+          <button id="fontUp"  type="button" aria-label="Increase font size">A+</button>
+          <button id="fontDown" type="button" aria-label="Decrease font size">A−</button>
+          <button id="contrast" type="button" aria-label="Toggle high contrast">High Contrast</button>
+        </div>
       </div>
-    </div>
 
-    <section class="menu-grid" aria-label="Drinks list">
-      <% items.forEach(item => { %>
-        <article class="card" tabindex="0" aria-labelledby="title-<%= item.product_id %>">
-          <img src="<%= item.img %>" alt="<%= item.product_name %>" />
-          <h3 id="title-<%= item.product_id %>"><%= item.product_name %></h3>
-          <div class="tags"><%= item.category_id %></div>
-          <p class="price">$<%= item.product_price.toFixed(2) %></p>
-          <button class="add-btn" type="button" data-id="<%= item.product_id %>">Add</button>
-        </article>
-      <% }) %>
-    </section>
-  </main>
+      <section class="menu-grid" aria-label="Drinks list">
+        <% items.forEach(item => { %>
+          <article class="card" tabindex="0" aria-labelledby="title-<%= item.id %>">
+            <img src="<%= item.img %>" alt="<%= item.name %>" />
+            <h3 id="title-<%= item.id %>"><%= item.name %></h3>
+            <div class="tags"><%= item.tags.join(' · ') %> · <%= item.calories %> cal</div>
+            <p class="price">$<%= item.price.toFixed(2) %></p>
+            <button class="add-btn" type="button" data-id="<%= item.id %>">Add</button>
+          </article>
+        <% }) %>
+      </section>
+    </main>
 
-  <script>
-    const root = document.documentElement;
-    let base = 16;
-    document.getElementById('fontUp').onclick   = () => { base = Math.min(base + 1, 22); root.style.fontSize = base + 'px'; };
-    document.getElementById('fontDown').onclick = () => { base = Math.max(base - 1, 14); root.style.fontSize = base + 'px'; };
-    document.getElementById('contrast').onclick = () => document.body.classList.toggle('hc');
+    <script>
+      const root = document.documentElement;
+      let base = 16;
+      document.getElementById('fontUp').onclick   = () => { base = Math.min(base + 1, 22); root.style.fontSize = base + 'px'; };
+      document.getElementById('fontDown').onclick = () => { base = Math.max(base - 1, 14); root.style.fontSize = base + 'px'; };
+      document.getElementById('contrast').onclick = () => document.body.classList.toggle('hc');
 
-    document.querySelectorAll('.add-btn').forEach(btn => {
-      btn.addEventListener('click', () => alert('Added to order (sample)'));
-    });
-  </script>
-  <a href="/" class="cancel-order">Back to Index</a>
+      document.querySelectorAll('.add-btn').forEach(btn => {
+        btn.addEventListener('click', () => alert('Added to order (sample)'));
+      });
+    </script>
+    <a href="/" class="cancel-order">Back to Index</a>
+  </div>
 </body>
 </html>

@@ -3,6 +3,7 @@ const express = require('express');
 const { Pool } = require('pg');
 const path = require('path');
 require('dotenv').config();
+const bcrypt = require("bcrypt");
 
 // ---- App Setup ----
 const app = express();
@@ -12,6 +13,7 @@ const port = process.env.PORT || 3000;
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));       // ensure EJS looks in /views
 app.use(express.static(path.join(__dirname, 'public'))); // serve /public (images/css/js)
+app.use(express.json()); // makes sure that express can read json sent over https requests
 
 // ---- Database Pool ----
 const pool = new Pool({
@@ -56,7 +58,14 @@ app.get('/customer-sign-in', (req, res) => {
   res.render('customerSignIn');
 });
 
+// This will need to be protected in the future
+app.get('/employee-sign-up', (req, res) => {
+  res.render('employeeSignUp');
+});
 
+app.get('/employee', (req, res) => {
+  res.render('employee');
+})
 
 // Help
 app.get('/help', (req, res) => {
@@ -81,6 +90,59 @@ app.get('/help', (req, res) => {
   ];
 
     res.render('help', {faqs, site});
+});
+
+// ---- Sign in and sign up functions ---- //
+app.post('/employee-sign-in/attempt', async (req, res) => {
+  const { username, password } = req.body;
+
+  // get hashedpassword from database
+  try {
+    const result = await pool.query('SELECT (password_hash) FROM employees WHERE username = $1', [username]);
+
+    if (result.rows.length === 0) {
+      // no user found
+      return res.json({ success: false, message: "User not found" });
+    }
+
+    const hashedPassword = result.rows[0].password_hash;
+    const match = await bcrypt.compare(password, hashedPassword);
+
+    if (!match) {
+      return res.json({ success: false, message: "Incorrect password" });
+    }
+    
+    res.json({ success: true, user: username});
+  } catch (err) {
+    console.error(err);
+    res.json({ success: false, message: "Server error"});
+  }
+});
+
+app.post('/employee-sign-up/attempt', async (req, res) => {
+  const { fullname, role, username, password } = req.body;
+
+  try {
+    const salt = await bcrypt.genSalt();
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const result = await pool.query(`INSERT INTO employees
+                                     (employee_name, role, username, password_hash)
+                                     VALUES ($1, $2, $3, $4)
+                                     RETURNING *;`,
+                                    [fullname, role, username, hashedPassword]);
+    
+    console.log("Inserted employee:", result.rows[0]);
+    res.json({ success: true});
+  } catch (err) {
+    console.error('DB error:', err);
+
+    if (err.code === '23505') { // unique violation in Postgres
+      return res.json({ success: false, message: "Username already exists" });
+    }
+
+    res.json({ success: false, message: "Server error: " + err});
+  }
 });
 
 // Contact

@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <head>
-    <title>Employee Sign-In</title>
+    <title>Employee Sign-Up</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,29 +15,40 @@
                 </a>
             </div>
             <ul class="nav-links">
-                <li><a href="/">Back To Kiosk</a></li>
+                <li><a href="/">Back To Manager Page</a></li>
             </ul>
         </nav>
         <div class="signin-container">
-            <section class="signin-card" aria-labelledby="signin-title">
+            <section class="signup-card" aria-labelledby="signin-title" >
                 <div class="brand"> 
-                    <h1 id="signin-title">Sign-In Page</h1>
-                    <p class="subtitle">Sign in to continue to the employee interface</p>
+                    <h1 id="signin-title">Employee Sign-Up Page</h1>
+                    <p class="subtitle">Follow the prompts to create a new employee account</p>
                 </div>
 
                 <form id="signin-form" class="form" novalidate>
-                    <label for="username" class="visually-hidden">Name</label>
-                    <input id="username" name="username" type="username" placeholder="Name" />
+                    <div class="toggle-group">
+                        <input type="radio" id="cashier" name="role" value="Cashier" checked>
+                        <label for="cashier">Cashier</label>
+
+                        <input type="radio" id="manager" name="role" value="Manager">
+                        <label for="manager">Manager</label>
+                    </div>
+
+                    <label for="name" class="visually-hidden">Full Name</label>
+                    <input id="name" name="name" type="text" placeholder="Full Name" />
+
+                    <label for="username" class="visually-hidden">User Name</label>
+                    <input id="username" name="username" type="username" placeholder="User Name" />
 
                     <label for="password" class="visually-hidden">Password</label>
                     <div class="password-row">
                         <input id="password" name="password" type="password" placeholder="Password" />
                     </div>
 
-                    <button type="submit" class="primary">Sign in</button>
+                    <button type="submit" class="primary">Create Account</button>
                 </form>
             </section>
         </div>
     </div>
-    <script src="/employeeSignIn.js"></script>
+    <script src="/employeeSignUp.js"></script>
 </body>
