@@ -4,6 +4,7 @@ const { Pool } = require('pg');
 const path = require('path');
 require('dotenv').config();
 const bcrypt = require("bcrypt");
+const { v3: translateV3 } = require('@google-cloud/translate');
 
 // ---- App Setup ----
 const app = express();
@@ -198,6 +199,19 @@ app.get('/user', (req, res) => {
             res.render('user', data);
         });
 });
+
+// Enable translate functon
+// ---- Translation API (backend) ----
+const TRANSLATE_ENABLED = (process.env.TRANSLATE_ENABLED || 'false') === 'true';
+const PROJECT_ID = process.env.PROJECT_ID;
+const GCP_LOCATION = process.env.GCP_LOCATION || 'global';
+
+const translateClient = new translateV3.TranslationServiceClient();
+const PARENT = `projects/${PROJECT_ID}/locations/${GCP_LOCATION}`;
+
+// TODO: HAO, next step is to get the data from frontend translate.js, and use API to translate these text, and then send them back
+// Need cache to reduce the space and the speed
+
 
 // ---- Start Server ----
 app.listen(port, () => {
