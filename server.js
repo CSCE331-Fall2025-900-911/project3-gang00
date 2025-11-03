@@ -5,6 +5,9 @@ const path = require('path');
 require('dotenv').config();
 const bcrypt = require("bcrypt");
 const { v3: translateV3 } = require('@google-cloud/translate');
+const session = require('express-session');
+const passport = require('passport');
+const GoogleStrategy = require('passport-google-oauth20');
 
 // ---- App Setup ----
 const app = express();
@@ -37,10 +40,67 @@ process.on('SIGINT', async () => {
   process.exit(0);
 });
 
+// Setting up session logging with Passport (For signing in/out)
+// Session setup
+app.use(session({
+  secret: "supersecretkey",
+  resave: false,
+  saveUninitialized: true
+}));
+
+// Initialize passport
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Passport serialize/deserialize
+passport.serializeUser((user, done) => done(null, user));
+passport.deserializeUser((user, done) => done(null, user)); 
+
+// Configure Google Strategy
+passport.use(new GoogleStrategy({
+  clientID: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  callbackURL: "/customer-sign-in/google/callback"
+}, async (accessToken, refreshToken, profile, done) => {
+  // Here’s where you would check if the user exists in your DB
+  // If not, create them.
+  // profile contains Google info like email, name, picture, etc.
+  try {
+    // check if customer with google id already exists
+    let result = await pool.query('SELECT * FROM customers WHERE google_id = $1', [profile.id]);
+
+    let user;
+
+    if (result.rows.length === 0) {
+      // no user found
+      const insertResult = await pool.query(
+        `INSERT INTO customers
+        (customer_name, email, google_id, points)
+        VALUES ($1, $2, $3, $4)
+        RETURNING *;`,
+        [profile.displayName, profile.emails[0].value, profile.id, 0]
+      );
+
+      user = insertResult.rows[0];
+    } else {
+      user = result.rows[0];
+    }
+
+    return done(null, user);
+  } catch (err) {
+    return done(err, null);
+  }
+}));
+
+
 // ---- Routes ----
 
 // Redirect home to /menu so you see the menu immediately
 app.get('/', (req, res) => {
+  // TODO - Might change later
+  if (req.isAuthenticated()) {
+    console.log("Logged in as user: " + req.user.customer_id);
+  }
   res.render('index');
 });
 
@@ -144,6 +204,18 @@ app.post('/employee-sign-up/attempt', async (req, res) => {
 
     res.json({ success: false, message: "Server error: " + err});
   }
+});
+
+// Attempt Google authentication
+app.get('/google/auth',
+  passport.authenticate("google", { scope: ["profile", "email"]})
+);
+
+// Google callback url
+app.get('/customer-sign-in/google/callback',
+  passport.authenticate("google", { failureRedirect: "/" }), (req, res) => {
+    // Successful login
+    res.redirect("/");
 });
 
 // Contact
