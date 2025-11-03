@@ -66,24 +66,42 @@ passport.use(new GoogleStrategy({
   // If not, create them.
   // profile contains Google info like email, name, picture, etc.
   try {
-    // check if customer with google id already exists
-    let result = await pool.query('SELECT * FROM customers WHERE google_id = $1', [profile.id]);
+    const googleId = profile.id;
+    const email = profile.emails[0].value;
+    const name = profile.displayName;
 
+    // check if customer with google id already exists
+    let result = await pool.query('SELECT * FROM customers WHERE google_id = $1', [googleId]);
     let user;
 
-    if (result.rows.length === 0) {
-      // no user found
-      const insertResult = await pool.query(
-        `INSERT INTO customers
-        (customer_name, email, google_id, points)
-        VALUES ($1, $2, $3, $4)
-        RETURNING *;`,
-        [profile.displayName, profile.emails[0].value, profile.id, 0]
-      );
-
-      user = insertResult.rows[0];
-    } else {
+    if (result.rows.length > 0) {
+      // Google account is already linked in db
       user = result.rows[0];
+    } else {
+      // check if a local account has already been set up with this email
+      const existingUser = await pool.query('SELECT * FROM customers WHERE email = $1', [email]);
+
+      if (existingUser.rows.length > 0) {
+        // we already have a local account, so add the new link to google
+        const updatedUser = await pool.query(
+          `UPDATE customers
+          SET google_id = $1
+          WHERE email = $2
+          RETURNING *;`,
+          [googleId, email]
+        );
+
+        user = updatedUser.rows[0];
+      } else {
+        // no local account and no google link
+        const newUser = await pool.query(
+          `INSERT INTO customers (customer_name, email, google_id, points)
+          VALUES ($1, $2, $3, $4)
+          RETURNING *;`,
+          [name, email, googleId, 0]
+        );
+        user = newUser.rows[0]
+      }
     }
 
     return done(null, user);
@@ -122,6 +140,11 @@ app.get('/customer-sign-in', (req, res) => {
 // This will need to be protected in the future
 app.get('/employee-sign-up', (req, res) => {
   res.render('employeeSignUp');
+});
+
+// This will need to be protected in the future
+app.get('/customer-sign-up', (req, res) => {
+  res.render('customerSignUp');
 });
 
 app.get('/employee', (req, res) => {
@@ -187,11 +210,13 @@ app.post('/employee-sign-up/attempt', async (req, res) => {
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const result = await pool.query(`INSERT INTO employees
-                                     (employee_name, role, username, password_hash)
-                                     VALUES ($1, $2, $3, $4)
-                                     RETURNING *;`,
-                                    [fullname, role, username, hashedPassword]);
+    const result = await pool.query(
+      `INSERT INTO employees
+      (employee_name, role, username, password_hash)
+      VALUES ($1, $2, $3, $4)
+      RETURNING *;`,
+      [fullname, role, username, hashedPassword]
+    );
     
     console.log("Inserted employee:", result.rows[0]);
     res.json({ success: true});
@@ -202,6 +227,86 @@ app.post('/employee-sign-up/attempt', async (req, res) => {
       return res.json({ success: false, message: "Username already exists" });
     }
 
+    res.json({ success: false, message: "Server error: " + err});
+  }
+});
+
+app.post('/customer-sign-in/attempt', async (req, res) => {
+  const { email, password } = req.body;
+
+  // get hashedpassword from database
+  try {
+    const result = await pool.query('SELECT (password_hash) FROM customers WHERE email = $1', [email]);
+
+    if (result.rows.length === 0) {
+      // no user found
+      return res.json({ success: false, message: "User not found" });
+    }
+
+    const user = result.rows[0];
+
+    // check if only have google account linked
+    if (!user.password_hash) {
+      return res.json({
+        success: false,
+        message: "Sign in with Google or visit the Sign Up page to link this email to a local account"
+      });
+    }
+
+    const hashedPassword = result.rows[0].password_hash;
+    const match = await bcrypt.compare(password, hashedPassword);
+
+    if (!match) {
+      return res.json({ success: false, message: "Incorrect password" });
+    }
+    
+    res.json({ success: true, user: email});
+  } catch (err) {
+    console.error(err);
+    res.json({ success: false, message: "Server error"});
+  }
+});
+
+app.post('/customer-sign-up/attempt', async (req, res) => {
+  const { fullname, email, password } = req.body;
+
+  try {
+    const result = await pool.query('SELECT * FROM customers WHERE email = $1', [email]);
+
+    if (result.rows.length > 0) {
+      // email already exits in data base
+      if (result.rows[0].password_hash !== null) {
+        // already have local account
+        return res.json({ success: false, message: "Account already exists for this email address!"});
+      } else {
+        // have no local, but a google linked account
+        const salt = await bcrypt.genSalt();
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        await pool.query(
+          `UPDATE customers
+          SET password_hash = $1
+          WHERE email = $2;`,
+          [hashedPassword, email]
+        );
+
+        return res.json({ success: true, message: "Account now has local login capabilities!"});
+      }
+    }
+
+    const salt = await bcrypt.genSalt();
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    await pool.query(
+      `INSERT INTO customers
+      (customer_name, email, password_hash)
+      VALUES ($1, $2, $3);`,
+      [fullname, email, hashedPassword]
+    );
+    
+    console.log("Inserted customer:", result.rows[0]);
+    res.json({ success: true});
+  } catch (err) {
     res.json({ success: false, message: "Server error: " + err});
   }
 });

@@ -127,7 +127,8 @@ html, body {
 
 input[type="text"],
 input[type="username"],
-input[type="password"]{
+input[type="password"],
+input[type="email"]{
   width:100%;
   padding:12px 14px;
   border-radius:10px;

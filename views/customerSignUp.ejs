@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<head>
+    <title>Customer Sign-Up</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div>
+        <nav class="navbar">
+            <div class="logo">
+                <a href="/">
+                    <img src="/ShareTea_logo.webp" alt="ShareTea Logo" class="logo-img">
+                </a>
+            </div>
+            <ul class="nav-links">
+                <li><a href="/">Back To Home Page</a></li>
+            </ul>
+        </nav>
+        <div class="signin-container">
+            <section class="signup-card" aria-labelledby="signin-title" >
+                <div class="brand"> 
+                    <h1 id="signin-title">Customer Sign-Up Page</h1>
+                    <p class="subtitle">Follow the prompts to create a new account!</p>
+                </div>
+
+                <form id="signin-form" class="form" novalidate>
+                    <label for="name" class="visually-hidden">Full Name</label>
+                    <input id="name" name="name" type="text" placeholder="Full Name" />
+
+                    <label for="email" class="visually-hidden">Email Address</label>
+                    <input id="email" name="email" type="email" placeholder="Email" />
+
+                    <label for="password" class="visually-hidden">Password</label>
+                    <div class="password-row">
+                        <input id="password" name="password" type="password" placeholder="Password" />
+                    </div>
+
+                    <button type="submit" class="primary">Create Account</button>
+                </form>
+            </section>
+        </div>
+    </div>
+    <script src="/customerSignUp.js"></script>
+</body>
