@@ -64,9 +64,6 @@ passport.use(new GoogleStrategy({
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
   callbackURL: "/customer-sign-in/google/callback"
 }, async (accessToken, refreshToken, profile, done) => {
-  // Here’s where you would check if the user exists in your DB
-  // If not, create them.
-  // profile contains Google info like email, name, picture, etc.
   try {
     const googleId = profile.id;
     const email = profile.emails[0].value;
@@ -112,7 +109,7 @@ passport.use(new GoogleStrategy({
   }
 }));
 
-passport.use(new LocalStrategy(
+passport.use('customer-local', new LocalStrategy(
   { usernameField: 'email', passwordField: 'password' }, 
   async (email, password, done) => {
     // get hashedpassword from database
@@ -145,12 +142,44 @@ passport.use(new LocalStrategy(
   }
 ));
 
+passport.use('employee-local', new LocalStrategy(
+  { usernameField: 'username', passwordField: 'password' }, 
+  async (username, password, done) => {
+    // get hashedpassword from database
+    try {
+      const result = await pool.query('SELECT * FROM employees WHERE username = $1', [username]);
+
+      if (result.rows.length === 0) {
+        // no user found
+        //return res.json({ success: false, message: "User not found" });
+        return done(null, false, { message: "User not found" });
+      }
+
+      const user = result.rows[0];
+
+      const hashedPassword = result.rows[0].password_hash;
+      const match = await bcrypt.compare(password, hashedPassword);
+
+      if (!match) {
+        //return res.json({ success: false, message: "Incorrect password" });
+        return done(null, false, { message: "Incorrect password"} );
+      }
+      
+      //res.json({ success: true, user: username});
+      done(null, user);
+    } catch (err) {
+      // console.error(err);
+      // res.json({ success: false, message: "Server error"});
+      done(err, false, { message: "Server error" });
+    }
+  }
+));
+
 
 // ---- Routes ----
 
 // Redirect home to /menu so you see the menu immediately
 app.get('/', (req, res) => {
-  // TODO - Might change later
   if (req.isAuthenticated()) {
     console.log("Logged in as user: " + req.user.customer_name);
   }
@@ -183,8 +212,10 @@ app.get('/customer-sign-up', (req, res) => {
 });
 
 app.get('/employee', (req, res) => {
-  res.render('employee');
-})
+  if (req.isAuthenticated()) {
+    res.render('employee', { user: req.user });
+  }
+});
 
 // Help
 app.get('/help', (req, res) => {
@@ -213,29 +244,22 @@ app.get('/help', (req, res) => {
 
 // ---- Sign in and sign up functions ---- //
 app.post('/employee-sign-in/attempt', async (req, res) => {
-  const { username, password } = req.body;
-
-  // get hashedpassword from database
-  try {
-    const result = await pool.query('SELECT (password_hash) FROM employees WHERE username = $1', [username]);
-
-    if (result.rows.length === 0) {
-      // no user found
-      return res.json({ success: false, message: "User not found" });
+  passport.authenticate('employee-local', (err, user, info) => {
+    if (err) {
+      return res.status(500).json({ success: false, message: 'Server error' });
     }
-
-    const hashedPassword = result.rows[0].password_hash;
-    const match = await bcrypt.compare(password, hashedPassword);
-
-    if (!match) {
-      return res.json({ success: false, message: "Incorrect password" });
+    if (!user) {
+      // Authentication failed
+      return res.status(401).json({ success: false, message: info.message });
     }
-    
-    res.json({ success: true, user: username});
-  } catch (err) {
-    console.error(err);
-    res.json({ success: false, message: "Server error"});
-  }
+    // Log in the user (establish session)
+    req.logIn(user, err => {
+      if (err) {
+        return res.status(500).json({ success: false, message: 'Login failed' });
+      }
+      return res.json({ success: true, user });
+    });
+  })(req, res);
 });
 
 app.post('/employee-sign-up/attempt', async (req, res) => {
@@ -267,7 +291,7 @@ app.post('/employee-sign-up/attempt', async (req, res) => {
 });
 
 app.post('/customer-sign-in/attempt', (req, res) => {
-  passport.authenticate('local', (err, user, info) => {
+  passport.authenticate('customer-local', (err, user, info) => {
     if (err) {
       return res.status(500).json({ success: false, message: 'Server error' });
     }
@@ -302,29 +326,42 @@ app.post('/customer-sign-up/attempt', async (req, res) => {
         const salt = await bcrypt.genSalt();
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        await pool.query(
+        const updateResult = await pool.query(
           `UPDATE customers
           SET password_hash = $1
-          WHERE email = $2;`,
+          WHERE email = $2
+          RETURNING *;`,
           [hashedPassword, email]
         );
 
-        return res.json({ success: true, message: "Account now has local login capabilities!"});
+        // Log in the user (establish session)
+        req.logIn(updateResult.rows[0], err => {
+          if (err) {
+            return res.status(500).json({ success: false, message: 'Login failed' });
+          }
+          return res.json({ success: true, message: "Account now has local login capabilities!"});
+        });
       }
     }
 
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    await pool.query(
+    const insertResult = await pool.query(
       `INSERT INTO customers
       (customer_name, email, password_hash)
-      VALUES ($1, $2, $3);`,
+      VALUES ($1, $2, $3)
+      RETURNING *;`,
       [fullname, email, hashedPassword]
     );
     
-    console.log("Inserted customer:", result.rows[0]);
-    res.json({ success: true});
+    // Log in the user (establish session)
+    req.logIn(insertResult.rows[0], err => {
+      if (err) {
+        return res.status(500).json({ success: false, message: 'Login failed' });
+      }
+      res.json({ success: true, user: req.user});
+    });
   } catch (err) {
     res.json({ success: false, message: "Server error: " + err});
   }
