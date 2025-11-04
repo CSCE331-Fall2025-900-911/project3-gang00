@@ -43,7 +43,6 @@
             <article class="card" tabindex="0" aria-labelledby="title-<%= item.id %>">
               <img src="<%= item.img_url %>" alt="<%= item.name %>" />
               <h3 id="title-<%= item.id %>"><%= item.name %></h3>
-              <div class="tags"><%= item.tags ? item.tags.join(', ') : '' %></div>
               <p class="price">$<%= Number(item.price).toFixed(2) %></p>
               <p class="calories"><%= item.calories %> cal</p>
               <button class="add-btn" type="button" data-id="<%= item.id %>">Add</button>
