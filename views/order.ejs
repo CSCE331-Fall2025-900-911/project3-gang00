@@ -1,1 +1,108 @@
-order page
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Your Order</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    .order-wrap{max-width:1000px;margin:24px auto;padding:0 16px}
+    .order-head{display:flex;justify-content:space-between;align-items:center}
+    .order-list{margin-top:16px;border:1px solid #eee;border-radius:12px}
+    .order-row{display:grid;grid-template-columns:1fr 100px 100px 36px;gap:12px;
+               align-items:center;padding:12px 16px;border-bottom:1px solid #eee}
+    .order-row:last-child{border-bottom:0}
+    .order-total{display:flex;justify-content:flex-end;gap:24px;margin-top:12px;font-weight:700}
+    .muted{color:#666}
+    .btn{padding:10px 14px;border-radius:10px;border:1px solid #111;background:#111;color:#fff;cursor:pointer}
+    .btn.outline{background:#fff;color:#111}
+    .empty{padding:32px 0;color:#666}
+  </style>
+</head>
+<body>
+  <!-- top nav reuse -->
+  <nav class="navbar">
+    <div class="logo">
+      <a href="/"><img src="/ShareTea_logo.webp" alt="ShareTea Logo" class="logo-img"></a>
+    </div>
+    <ul class="nav-links">
+      <li><a href="/menu">Menu</a></li>
+      <li><a href="/employee-sign-in">Employee Sign In</a></li>
+      <li><a href="/manager-sign-in">Manager Sign In</a></li>
+      <li><a href="/help">Help</a></li>
+      <li><a href="/contact">Contact</a></li>
+    </ul>
+  </nav>
+
+  <main class="order-wrap">
+    <div class="order-head">
+      <h1>Your Order</h1>
+      <div>
+        <button id="clearCart" class="btn outline">Clear</button>
+        <button id="checkout" class="btn">Checkout</button>
+      </div>
+    </div>
+
+    <div id="orderContainer"></div>
+
+    <div class="order-total">
+      <div class="muted">Subtotal:</div>
+      <div id="subtotal">$0.00</div>
+    </div>
+  </main>
+
+  <script>
+    const CART_KEY = 'sharetea_cart';
+
+    function loadCart(){
+      try { return JSON.parse(localStorage.getItem(CART_KEY) || '[]'); }
+      catch { return []; }
+    }
+    function saveCart(items){ localStorage.setItem(CART_KEY, JSON.stringify(items)); }
+
+    function render(){
+      const items = loadCart();
+      const wrap = document.getElementById('orderContainer');
+      if(!items.length){
+        wrap.innerHTML = '<div class="empty">Your cart is empty. <a href="/menu">Add some drinks</a>.</div>';
+        document.getElementById('subtotal').textContent = '$0.00';
+        return;
+      }
+      wrap.innerHTML = `
+        <div class="order-list" role="table" aria-label="Cart items">
+          ${items.map((x,i)=>`
+            <div class="order-row" role="row">
+              <div>
+                <div style="font-weight:600">${x.name}</div>
+                <div class="muted">${x.tags?.join(', ') ?? ''}</div>
+              </div>
+              <div class="muted">x${x.qty}</div>
+              <div>$${(x.price * x.qty).toFixed(2)}</div>
+              <button class="btn outline" data-idx="${i}" aria-label="Remove ${x.name}">×</button>
+            </div>
+          `).join('')}
+        </div>
+      `;
+      // subtotal
+      const subtotal = items.reduce((s,x)=>s + x.price * x.qty, 0);
+      document.getElementById('subtotal').textContent = '$' + subtotal.toFixed(2);
+
+      // remove handlers
+      wrap.querySelectorAll('button[data-idx]').forEach(btn=>{
+        btn.onclick = () => {
+          const idx = +btn.dataset.idx;
+          const list = loadCart();
+          list.splice(idx,1);
+          saveCart(list);
+          render();
+        };
+      });
+    }
+
+    document.getElementById('clearCart').onclick = () => { saveCart([]); render(); };
+    document.getElementById('checkout').onclick = () => alert('Stub: checkout flow coming soon');
+
+    render();
+  </script>
+</body>
+</html>
