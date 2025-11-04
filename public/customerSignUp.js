@@ -2,21 +2,25 @@ const form = document.getElementById('signin-form');
 form.addEventListener('submit', e => {
     e.preventDefault();
 
+    const fullname = document.getElementById('name').value;
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     if (form.checkValidity()) {
-        console.log("Client");
-        fetch("/customer-sign-in/attempt", {
+        fetch("/customer-sign-up/attempt", {
         method: "POST",
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ email: email, password: password })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fullname, email, password })
         })
         .then(res => res.json())
         .then(data => {
         if (data.success) {
-            window.location.href = "/"; // GET request to home page
+            alert("Account successfully created!");
         } else {
-            alert("Login failed: " + data.message);
+            if (data.message != null) {
+                alert("Account creation failed: " + data.message);
+            } else {
+                alert("Account creation failed");
+            }
         }
         });
     } else {
@@ -26,8 +30,6 @@ form.addEventListener('submit', e => {
 const googleButton = document.getElementById('googleButton');
 googleButton.addEventListener('click', e => {
     e.preventDefault();
-
-    console.log("Clicked sign in with google")
 
     // attempt to authorize with google endpoint
     window.location.href = "/google/auth";

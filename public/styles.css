@@ -127,7 +127,8 @@ html, body {
 
 input[type="text"],
 input[type="username"],
-input[type="password"]{
+input[type="password"],
+input[type="email"]{
   width:100%;
   padding:12px 14px;
   border-radius:10px;
@@ -169,6 +170,24 @@ input:focus{
   color:white;
   box-shadow:0 6px 16px rgba(37,99,235,0.18);
   margin-top:4px;
+}
+
+#googleButton {
+  width:100%;
+  padding:12px 14px;
+  border-radius:10px;
+  border:none;
+  font-weight:600;
+  cursor:pointer;
+  background:black;
+  color:white;
+  box-shadow:0 6px 16px rgba(37,99,235,0.18);
+  margin-top:4px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px
 }
 
 .speaker-btn {
