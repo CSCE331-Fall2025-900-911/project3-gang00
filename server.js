@@ -381,10 +381,11 @@ app.get('/menu', async (req, res) => {
       'SELECT * FROM products;'
     );
     const items = rows.map(r => ({
-      product_id: r.product_id,
-      product_name: r.product_name,
-      product_price: Number(r.product_price),
-      category_id: r.category_id,
+      id: r.product_id,
+      name: r.product_name,
+      price: Number(r.product_price),
+      tags: r.category_id,
+      img_url: "./public/img/mango.jpg"
     }));
 
     res.render('menu', { items });
