@@ -264,3 +264,38 @@ input:focus{
 .contactGrid { 
     display: grid; gap: .75rem; 
 }
+
+.contactUs {
+    max-width: 600px;  
+    margin: 0 auto;        
+    padding: 20px;
+}
+
+.contactGrid input,
+.contactGrid textarea {
+    width: 100%;          
+    max-width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    font-size: 1rem;
+
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+
+.contactGrid button {
+    padding: 12px;
+    width: 100%;
+    cursor: pointer;
+    background-color: #cc0000;
+    color: white;
+    font-weight: 500;
+    border: none;
+    border-radius: 6px;
+    transition: background 0.2s ease-in-out;
+}
+
+.contactGrid button:hover {
+    background-color: #a80000;
+}

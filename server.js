@@ -432,7 +432,7 @@ async function getWeather(lat, lon) {
 }
 
 //test getWeather function
-getWeather(30.2672, -97.7431); 
+getWeather(30.62798, -96.33441); 
 
 
 // ---- Start Server ----
