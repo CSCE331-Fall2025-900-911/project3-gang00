@@ -5,37 +5,89 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Menu</title>
   <link rel="stylesheet" href="/styles.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
-    .menu-container { max-width: 1000px; margin: 24px auto; padding: 0 16px; }
-    .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
-    .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px; background: #fff; }
-    .card img { width: 100%; height: 160px; object-fit: cover; border-radius: 10px; }
-    .card h3 { margin: 10px 0 6px; font-size: 18px; }
-    .price { font-weight: 600; }
-    .tags { font-size: 12px; color: #555; }
-    .add-btn { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid #111; background: #111; color: #fff; cursor: pointer; }
-    .add-btn:focus { outline: 3px solid #3b82f6; outline-offset: 2px; }
-    .toolbar { display:flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    body.hc { background:#000; color:#fff; }
-    body.hc .card { background:#111; border-color:#333; }
-    body.hc .add-btn { background:#fff; color:#000; border-color:#fff; }
-  </style>
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: #f8f4f4;
+  }
+  .menu-container {
+    max-width: 1200px;
+    margin: 24px auto;
+    padding: 0 24px;
+  }
+  .menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 24px;
+  }
+  .card {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 12px;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: transform 0.1s ease-in-out;
+  }
+  .card:hover {
+    transform: translateY(-3px);
+  }
+  .card img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 10px;
+  }
+  .card h3 {
+    margin: 10px 0 6px;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .price {
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .add-btn {
+    width: 100%;
+    padding: 10px;
+    border-radius: 10px;
+    border: none;
+    background: #111;
+    color: #fff;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .add-btn:hover {
+    background: #333;
+  }
+  .toolbar {
+    display:flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .cancel-order {
+    display: inline-block;
+    margin: 24px;
+    background: #ffe5e5;
+    padding: 16px 24px;
+    border-radius: 10px;
+    color: #000;
+    text-decoration: none;
+    font-weight: 500;
+  }
+</style>
 </head>
 
 <body>
-  <div>
-    <main class="menu-container">
-      <div class="toolbar" role="region" aria-label="Menu controls">
-        <h1>Menu</h1>
-        <div>
-          <button id="fontUp"  type="button" aria-label="Increase font size">A+</button>
-          <button id="fontDown" type="button" aria-label="Decrease font size">A−</button>
-          <button id="contrast" type="button" aria-label="Toggle high contrast">High Contrast</button>
-        </div>
+  <main class="menu-container">
+    <div class="toolbar">
+      <h1>Menu</h1>
+      <div>
+        <button id="fontUp" type="button">A+</button>
+        <button id="fontDown" type="button">A−</button>
       </div>
+    </div>
 
       <% if (items && items.length > 0) { %>
         <section class="menu-grid" aria-label="Drinks list">
@@ -54,18 +106,14 @@
       <% } %>
     </main>
 
-    <script>
-      const root = document.documentElement;
-      let base = 16;
-      document.getElementById('fontUp').onclick   = () => { base = Math.min(base + 1, 22); root.style.fontSize = base + 'px'; };
-      document.getElementById('fontDown').onclick = () => { base = Math.max(base - 1, 14); root.style.fontSize = base + 'px'; };
-      document.getElementById('contrast').onclick = () => document.body.classList.toggle('hc');
-
-      document.querySelectorAll('.add-btn').forEach(btn => {
-        btn.addEventListener('click', () => alert('Added to order (sample)'));
-      });
-    </script>
     <a href="/" class="cancel-order">Back to Home</a>
-  </div>
+  </main>
+
+  <script>
+    const root = document.documentElement;
+    let base = 16;
+    document.getElementById('fontUp').onclick   = () => { base = Math.min(base + 1, 22); root.style.fontSize = base + 'px'; };
+    document.getElementById('fontDown').onclick = () => { base = Math.max(base - 1, 14); root.style.fontSize = base + 'px'; };
+  </script>
 </body>
 </html>
