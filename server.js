@@ -1,4 +1,4 @@
-// index.js
+// server.js
 const express = require('express');
 const { Pool } = require('pg');
 const path = require('path');
@@ -28,7 +28,7 @@ const pool = new Pool({
   database: process.env.PSQL_DATABASE,
   password: process.env.PSQL_PASSWORD,
   port: process.env.PSQL_PORT,
-  ssl: { rejectUnauthorized: false }
+  ssl: { rejectUnauthorized: false },
 });
 
 // Graceful shutdown
@@ -188,27 +188,33 @@ app.get('/employee', (req, res) => {
 
 // Help
 app.get('/help', (req, res) => {
-    //site object for supportcontact
-    const site = {
+  const site = {
     brand: 'Sharetea',
     supportEmail: 'support@sharetea.mcgowan',
     supportPhone: '(555) 123-4567',
-    supportHours: 'Daily 10 AM - 8 PM'
+    supportHours: 'Daily 10 AM - 8 PM',
   };
 
-    //list of faq questions to render
-    const faqs = [
-    { q: 'How do I place an order?',
-      a: 'Go to the Order page, pick items, customize, and checkout.' },
-    { q: 'Do you offer delivery?',
-      a: 'Yes. Delivery availability depends on your location and local partners.' },
-    { q: 'Can I customize my drink?',
-      a: 'Absolutely—choose sweetness, ice level, size, and toppings during checkout.' },
-    { q: 'Are allergen details available?',
-      a: 'Common allergens are listed on each product page; cross-contact may occur.' }
+  const faqs = [
+    {
+      q: 'How do I place an order?',
+      a: 'Go to the Order page, pick items, customize, and checkout.',
+    },
+    {
+      q: 'Do you offer delivery?',
+      a: 'Yes. Delivery availability depends on your location and local partners.',
+    },
+    {
+      q: 'Can I customize my drink?',
+      a: 'Absolutely—choose sweetness, ice level, size, and toppings during checkout.',
+    },
+    {
+      q: 'Are allergen details available?',
+      a: 'Common allergens are listed on each product page; cross-contact may occur.',
+    },
   ];
 
-    res.render('help', {faqs, site});
+  res.render('help', { faqs, site });
 });
 
 // ---- Sign in and sign up functions ---- //
