@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <head>
-    <title>Help</title>
+    <title>Contact</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,49 +23,19 @@
             </ul>
         </nav>
     </div>
-    <div class="helpPageTitle">
-        <h1>Help Page</h1>
+    <div class="ContactTitle">
+        <h1>Contact Us</h1>
     </div>
 
-    <!--Start of FAQ section -->
     <main>
-        <div class="searchFAQ">
-            <section>
-            <h2>Frequently Asked Questions</h2>
-            <div id="faqList">
-                <% faqs.forEach((item, i) => { %>
-                <details class="faq">
-                    <summary>
-                        <%= item.q %>
-                    </summary>
-                    <div class="muted">
-                        <%= item.a %>
-                    </div>
-                </details>
-                <% }) %>
-            </div>
-            </section>
-        </div>
-
         <!--Contact Us Section-->
         <section>
         <h2>Contact Us</h2>
         <div class="contactUs">
-
             <div><strong>Email:</strong> <a href="mailto:<%= site.supportEmail %>"><%= site.supportEmail %></a></div>
             <div><strong>Phone:</strong> <a href="tel:+15551234567"><%= site.supportPhone %></a></div>
             <div><strong>Support Hours:</strong> <%= site.supportHours %></div>
-
-            <br />
-
-            <form action="/contact" method="POST" class="contactGrid">
-
-            <input type="text" name="name" placeholder="Your name" required />
-            <input type="email" name="email" placeholder="Your email" required />
-            <textarea name="message" placeholder="How can we help?" rows="4" required></textarea>
-            <button type="submit">Send Message</button>
-
-            </form>
+            <div><strong>Address: </strong><%= site.address%></div>
         </div>
         </section>
 

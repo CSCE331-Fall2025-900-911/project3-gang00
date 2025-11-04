@@ -11,9 +11,12 @@
   font-style: normal;
 }
 
-body {
+html, body {
   font-family: "Poppins", sans-serif;
   background-color: #f4efef;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Navbar container */
@@ -25,6 +28,7 @@ body {
     /* background-color: white; */
     padding: 1.3rem 1rem;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
 }
 
 .logo-img {
@@ -68,8 +72,19 @@ body {
   box-shadow: 0 6px 20px rgba(17,24,39,0.08);
   border: 1px solid rgba(15,23,42,0.04);
   height: 370px;
-  width: 600px;
+  width: 500px;
   margin: 100px;
+}
+
+.signup-card{
+  background: #ffffff;
+  border-radius: 14px;
+  padding:28px;
+  box-shadow: 0 6px 20px rgba(17,24,39,0.08);
+  border: 1px solid rgba(15,23,42,0.04);
+  height: 520px;
+  width: 500px;
+  margin: 60px;
 }
 
 .brand{ text-align:center; margin-bottom:18px; }
@@ -77,8 +92,43 @@ body {
 .subtitle{ margin:6px 0 0; color: #6b7280; font-size:13px; }
 .form { display:flex; flex-direction:column; gap:12px; margin-top:6px; }
 
+.toggle-group {
+  display: flex;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  overflow: hidden;
+  width: 100%;
+  max-width: 300px;
+  margin-bottom: 16px;
+  margin: 0 auto 16px auto;
+}
+
+/* Hide the actual radio buttons */
+.toggle-group input[type="radio"] {
+  display: none;
+}
+
+/* Label styles */
+.toggle-group label {
+  flex: 1;
+  padding: 10px 0;
+  text-align: center;
+  background-color: #f5f5f5;
+  cursor: pointer;
+  transition: background-color 0.25s, color 0.25s;
+  font-weight: 500;
+}
+
+/* Highlight the selected option */
+.toggle-group input[type="radio"]:checked + label {
+  background-color: #ff6d6d;
+  color: white;
+}
+
+input[type="text"],
 input[type="username"],
-input[type="password"]{
+input[type="password"],
+input[type="email"]{
   width:100%;
   padding:12px 14px;
   border-radius:10px;
@@ -91,7 +141,6 @@ input[type="password"]{
 
 input:focus{
   box-shadow:0 0 0 4px rgba(37,99,235,0.08);
-  border-color:var(--accent);
 }
 
 .password-row{
@@ -121,6 +170,24 @@ input:focus{
   color:white;
   box-shadow:0 6px 16px rgba(37,99,235,0.18);
   margin-top:4px;
+}
+
+#googleButton {
+  width:100%;
+  padding:12px 14px;
+  border-radius:10px;
+  border:none;
+  font-weight:600;
+  cursor:pointer;
+  background:black;
+  color:white;
+  box-shadow:0 6px 16px rgba(37,99,235,0.18);
+  margin-top:4px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px
 }
 
 .speaker-btn {
@@ -155,7 +222,7 @@ input:focus{
     justify-content: center;
     align-items: center;
     gap: 1rem;
-    height: 100vh;
+    flex: 1;
 }
 
 .center-container .menu-button {

@@ -5,7 +5,19 @@ form.addEventListener('submit', e => {
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
     if (form.checkValidity()) {
-        console.log("Username: " + username + " Password: " + password);
+        fetch("/employee-sign-in/attempt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+        })
+        .then(res => res.json())
+        .then(data => {
+        if (data.success) {
+            window.location.href = "/employee"; // GET request to employee page
+        } else {
+            alert("Login failed: " + data.message);
+        }
+        });
     } else {
         form.reportValidity();
     }
