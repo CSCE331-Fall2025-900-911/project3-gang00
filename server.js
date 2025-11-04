@@ -10,6 +10,8 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20');
 const LocalStrategy = require('passport-local').Strategy;
 
+const WEATHER_API_KEY = process.env.WEATHER_API_KEY;
+
 // ---- App Setup ----
 const app = express();
 const port = process.env.PORT || 3000;
@@ -413,6 +415,24 @@ const PARENT = `projects/${PROJECT_ID}/locations/${GCP_LOCATION}`;
 
 // TODO: HAO, next step is to get the data from frontend translate.js, and use API to translate these text, and then send them back
 // Need cache to reduce the space and the speed
+
+// Async function that calls weather api
+async function getWeather(lat, lon) {
+  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${WEATHER_API_KEY}&units=metric`;
+
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    console.log("Current weather:", data);
+    return data;
+  } catch (error) {
+    console.error("Error fetching weather:", error);
+  }
+}
+
+//test getWeather function
+getWeather(30.62798, -96.33441); 
 
 
 // ---- Start Server ----
