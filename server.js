@@ -402,12 +402,77 @@ const TRANSLATE_ENABLED = (process.env.TRANSLATE_ENABLED || 'false') === 'true';
 const PROJECT_ID = process.env.PROJECT_ID;
 const GCP_LOCATION = process.env.GCP_LOCATION || 'global';
 
-const translateClient = new translateV3.TranslationServiceClient();
+const translateClient = new translateV3.TranslationServiceClient(); // connect the translate server
 const PARENT = `projects/${PROJECT_ID}/locations/${GCP_LOCATION}`;
 
 // TODO: HAO, next step is to get the data from frontend translate.js, and use API to translate these text, and then send them back
 // Need cache to reduce the space and the speed
+// A simple cache
+const translateCache = new Map();
+function cacheKey(text, source, target, mime) {
+    // target language, source language, the type of text, the content of text
+    return `${target}|${source || ''}|${mime || 'text/plain'}|${text}`; 
+}
 
+app.post('/api/translate', async (req, res) => {
+    if (!TRANSLATE_ENABLED) 
+        return res.status(503).json({ error: 'translation disabled' });
+
+    const { texts, target, source, mimeType } = req.body || {};
+    if (!Array.isArray(texts) || texts.length === 0 || !target) {
+      return res.status(400).json({ error: 'texts(array)/target required' });
+    }
+
+    // hit cache & deduplicating
+    const results = new Array(texts.length);
+    const toQuery = [];
+    const idxMap = [];
+    for (let i = 0; i < texts.length; i++) {
+      const t = (texts[i] || '').trim();
+      const key = cacheKey(t, source, target, mimeType);
+      if (translateCache.has(key)) {
+        results[i] = translateCache.get(key);
+      } else {
+        toQuery.push(t); // there is no any result for this stuff that is needed to translate, push and query
+        idxMap.push(i); // record the index of this element
+      }
+    }
+
+    try {
+        if (toQuery.length > 0) {
+            const req = {
+              parent: PARENT,
+              contents: toQuery,
+              targetLanguageCode: target,
+              mimeType: mimeType || 'text/plain',
+            };
+            
+            if (source) {
+              req.sourceLanguageCode = source;
+            }
+            
+            const [resp] = await translateClient.translateText(req); // call translate API, and get the first element of the return array which is [all translated content]
+
+            const translated = (resp.translations || []).map(t => t.translatedText || ''); // map function will travesal all element of the array, and excute the function which is its param
+            translated.forEach((val, k) => {
+                const i = idxMap[k]; // find the corresponding index of the idxmap, and then we can put the translated content to the right places
+                results[i] = val;
+                const key = cacheKey(texts[i], source, target, mimeType);
+                translateCache.set(key, val);
+            });
+
+            // control the cache size
+            if (translateCache.size > 2000) {
+                translateCache.delete(translateCache.keys().next().value);
+            }
+        }
+
+        res.json({ results });
+    } catch (e) {
+        console.error('translate error:', e);
+        res.status(500).json({ error: 'translate failed' });
+    }
+});
 
 // ---- Start Server ----
 app.listen(port, () => {
