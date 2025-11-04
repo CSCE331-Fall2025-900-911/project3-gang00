@@ -1,108 +1,189 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Your Order</title>
-  <link rel="stylesheet" href="/styles.css">
-  <style>
-    .order-wrap{max-width:1000px;margin:24px auto;padding:0 16px}
-    .order-head{display:flex;justify-content:space-between;align-items:center}
-    .order-list{margin-top:16px;border:1px solid #eee;border-radius:12px}
-    .order-row{display:grid;grid-template-columns:1fr 100px 100px 36px;gap:12px;
-               align-items:center;padding:12px 16px;border-bottom:1px solid #eee}
-    .order-row:last-child{border-bottom:0}
-    .order-total{display:flex;justify-content:flex-end;gap:24px;margin-top:12px;font-weight:700}
-    .muted{color:#666}
-    .btn{padding:10px 14px;border-radius:10px;border:1px solid #111;background:#111;color:#fff;cursor:pointer}
-    .btn.outline{background:#fff;color:#111}
-    .empty{padding:32px 0;color:#666}
-  </style>
+    <title>Order</title>
+    <link rel="stylesheet" href="styles.css">
+    <script>
+        function addToOrder(productId, productName, productPrice, isAddon = false) {
+            const orderList = document.getElementById('order-list');
+
+            const orderItem = document.createElement('li');
+            orderItem.textContent = `${productName} - $${productPrice.toFixed(2)}`;
+
+            if (isAddon) {
+                orderItem.style.marginLeft = '20px'; // Indent for sub-items
+                orderItem.style.fontSize = '0.9em'; // Smaller font for add-ons
+            }
+
+            orderList.appendChild(orderItem);
+
+            const subtotalElement = document.getElementById('subtotal');
+            const taxElement = document.getElementById('tax');
+            const totalElement = document.getElementById('total');
+
+            const currentSubtotal = parseFloat(subtotalElement.textContent);
+            const newSubtotal = currentSubtotal + productPrice;
+            const tax = newSubtotal * 0.0825;
+            const total = newSubtotal + tax;
+
+            subtotalElement.textContent = newSubtotal.toFixed(2);
+            taxElement.textContent = tax.toFixed(2);
+            totalElement.textContent = total.toFixed(2);
+
+            // Persist order data in localStorage
+            const orderData = JSON.parse(localStorage.getItem('orderData')) || { items: [], subtotal: 0 };
+            orderData.items.push({ productId, productName, productPrice, isAddon });
+            orderData.subtotal = newSubtotal;
+            localStorage.setItem('orderData', JSON.stringify(orderData));
+        }
+
+        function loadOrder() {
+            const orderData = JSON.parse(localStorage.getItem('orderData'));
+            if (orderData) {
+                const orderList = document.getElementById('order-list');
+                const subtotalElement = document.getElementById('subtotal');
+                const taxElement = document.getElementById('tax');
+                const totalElement = document.getElementById('total');
+
+                orderData.items.forEach(item => {
+                    const orderItem = document.createElement('li');
+                    orderItem.textContent = `${item.productName} - $${item.productPrice.toFixed(2)}`;
+
+                    if (item.isAddon) {
+                        orderItem.style.marginLeft = '20px'; // Indent for sub-items
+                        orderItem.style.fontSize = '0.9em'; // Smaller font for add-ons
+                    }
+
+                    orderList.appendChild(orderItem);
+                });
+
+                const tax = orderData.subtotal * 0.0825;
+                const total = orderData.subtotal + tax;
+
+                subtotalElement.textContent = orderData.subtotal.toFixed(2);
+                taxElement.textContent = tax.toFixed(2);
+                totalElement.textContent = total.toFixed(2);
+            }
+        }
+
+        function clearOrder() {
+            // Clear order data from localStorage
+            localStorage.removeItem('orderData');
+
+            // Reset the order list and totals
+            document.getElementById('order-list').innerHTML = '';
+            document.getElementById('subtotal').textContent = '0.00';
+            document.getElementById('tax').textContent = '0.00';
+            document.getElementById('total').textContent = '0.00';
+        }
+
+        function showAddons(productId, productName, productPrice) {
+            // Clear previously selected add-ons
+            const addonCheckboxes = document.querySelectorAll('.addon-checkbox');
+            addonCheckboxes.forEach(checkbox => checkbox.checked = false);
+
+            // Store the selected product details
+            const selectedProduct = { id: productId, name: productName, price: productPrice };
+            localStorage.setItem('selectedProduct', JSON.stringify(selectedProduct));
+
+            // Display the add-ons section
+            const addonsSection = document.getElementById('addons-section');
+            addonsSection.style.display = 'block';
+        }
+
+        function addProductWithAddons() {
+            // Retrieve the selected product details
+            const selectedProduct = JSON.parse(localStorage.getItem('selectedProduct'));
+
+            // Add the product to the order
+            addToOrder(selectedProduct.id, selectedProduct.name, selectedProduct.price);
+
+            // Add selected add-ons to the order
+            const selectedAddons = document.querySelectorAll('.addon-checkbox:checked');
+            selectedAddons.forEach(addonCheckbox => {
+                const addonId = addonCheckbox.dataset.id;
+                const addonName = addonCheckbox.dataset.name;
+                const addonPrice = parseFloat(addonCheckbox.dataset.price);
+                addToOrder(addonId, addonName, addonPrice, true);
+            });
+
+            // Hide the add-ons section
+            const addonsSection = document.getElementById('addons-section');
+            addonsSection.style.display = 'none';
+
+            // Clear the selected product
+            localStorage.removeItem('selectedProduct');
+        }
+
+        // Load order data on page load
+        window.onload = loadOrder;
+    </script>
 </head>
 <body>
-  <!-- top nav reuse -->
-  <nav class="navbar">
-    <div class="logo">
-      <a href="/"><img src="/ShareTea_logo.webp" alt="ShareTea Logo" class="logo-img"></a>
-    </div>
-    <ul class="nav-links">
-      <li><a href="/menu">Menu</a></li>
-      <li><a href="/employee-sign-in">Employee Sign In</a></li>
-      <li><a href="/manager-sign-in">Manager Sign In</a></li>
-      <li><a href="/help">Help</a></li>
-      <li><a href="/contact">Contact</a></li>
-    </ul>
-  </nav>
+    <div>
+        <h1>Order Page</h1>
 
-  <main class="order-wrap">
-    <div class="order-head">
-      <h1>Your Order</h1>
-      <div>
-        <button id="clearCart" class="btn outline">Clear</button>
-        <button id="checkout" class="btn">Checkout</button>
-      </div>
-    </div>
-
-    <div id="orderContainer"></div>
-
-    <div class="order-total">
-      <div class="muted">Subtotal:</div>
-      <div id="subtotal">$0.00</div>
-    </div>
-  </main>
-
-  <script>
-    const CART_KEY = 'sharetea_cart';
-
-    function loadCart(){
-      try { return JSON.parse(localStorage.getItem(CART_KEY) || '[]'); }
-      catch { return []; }
-    }
-    function saveCart(items){ localStorage.setItem(CART_KEY, JSON.stringify(items)); }
-
-    function render(){
-      const items = loadCart();
-      const wrap = document.getElementById('orderContainer');
-      if(!items.length){
-        wrap.innerHTML = '<div class="empty">Your cart is empty. <a href="/menu">Add some drinks</a>.</div>';
-        document.getElementById('subtotal').textContent = '$0.00';
-        return;
-      }
-      wrap.innerHTML = `
-        <div class="order-list" role="table" aria-label="Cart items">
-          ${items.map((x,i)=>`
-            <div class="order-row" role="row">
-              <div>
-                <div style="font-weight:600">${x.name}</div>
-                <div class="muted">${x.tags?.join(', ') ?? ''}</div>
-              </div>
-              <div class="muted">x${x.qty}</div>
-              <div>$${(x.price * x.qty).toFixed(2)}</div>
-              <button class="btn outline" data-idx="${i}" aria-label="Remove ${x.name}">×</button>
-            </div>
-          `).join('')}
+        <!-- Constant Category Bar -->
+        <div class="category-bar">
+            <ul>
+                <% groupedProducts.forEach(group => { %>
+                    <li>
+                        <a href="/order?category=<%= group.categoryId %>"><%= group.category %></a>
+                    </li>
+                <% }); %>
+            </ul>
         </div>
-      `;
-      // subtotal
-      const subtotal = items.reduce((s,x)=>s + x.price * x.qty, 0);
-      document.getElementById('subtotal').textContent = '$' + subtotal.toFixed(2);
 
-      // remove handlers
-      wrap.querySelectorAll('button[data-idx]').forEach(btn=>{
-        btn.onclick = () => {
-          const idx = +btn.dataset.idx;
-          const list = loadCart();
-          list.splice(idx,1);
-          saveCart(list);
-          render();
-        };
-      });
-    }
 
-    document.getElementById('clearCart').onclick = () => { saveCart([]); render(); };
-    document.getElementById('checkout').onclick = () => alert('Stub: checkout flow coming soon');
+        <!-- Display products for the selected category -->
+        <div class="center-container">
+            <% if (selectedCategory) { %>
+                <% const selectedGroup = groupedProducts.find(group => group.categoryId == selectedCategory); %>
+                <% if (selectedGroup) { %>
+                    <div class="products">
+                        <h2>Products in <%= selectedGroup.category %></h2>
+                        <ul>
+                            <% selectedGroup.products.forEach(product => { %>
+                                <li>
+                                    <strong><%= product.name %></strong> - $<%= product.price %>
+                                <button onclick="showAddons('<%= product.id %>', '<%= product.name %>', <%= product.price %>)">Select Add-ons</button>
+                                </li>
+                            <% }); %>
+                        </ul>
+                    </div>
+                <% } else { %>
+                    <p>No products found for the selected category.</p>
+                <% } %>
+            <% } %>
 
-    render();
-  </script>
+            <!-- Add-ons Section -->
+            <div id="addons-section" style="display: none;">
+                <h2>Select Add-ons</h2>
+                <ul>
+                    <% addons.forEach(addon => { %>
+                        <li>
+                            <input type="checkbox" class="addon-checkbox" data-id="<%= addon.id %>" data-name="<%= addon.name %>" data-price="<%= addon.price %>">
+                            <strong><%= addon.name %></strong> - $<%= addon.price.toFixed(2) %>
+                        </li>
+                    <% }); %>
+                </ul>
+                <button onclick="addProductWithAddons()">Add to Order</button>
+            </div>
+        </div>
+
+        <!-- Order Summary -->
+        <div class="center-container">
+            <div class="order-summary">
+                <h2>Order Summary</h2>
+                <ul id="order-list"></ul>
+                <p>Subtotal: $<span id="subtotal">0.00</span></p>
+                <p>Tax (8.25%): $<span id="tax">0.00</span></p>
+                <p>Total: $<span id="total">0.00</span></p>
+                <button onclick="clearOrder()">Checkout</button>
+            </div>
+        </div>
+        <button class="clear-order" onclick="clearOrder()">Clear Order</button>
+        <button class="cancel-order" onclick="clearOrder(); window.location.href='/'">Cancel Order</button>
+    </div>
 </body>
 </html>

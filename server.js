@@ -10,6 +10,9 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20');
 const LocalStrategy = require('passport-local').Strategy;
 
+const WEATHER_API_KEY = process.env.WEATHER_API_KEY;
+
+// ---- App Setup ----
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -233,49 +236,16 @@ app.get('/user', async (req, res) => {
 
 // -------- Menu Route (DB-backed) --------
 app.get('/menu', async (req, res) => {
-  try {
-    const { rows } = await pool.query('SELECT * FROM products;');
-
-    const imgByKeyword = [
-      { key: 'thai',            file: 'thai.jpg' },
-      { key: 'taro',            file: 'taro.jpg' },
-      { key: 'mango',           file: 'mango.jpg' },
-      { key: 'coffee',          file: 'coffee.jpg' },
-      { key: 'coconut',         file: 'coconut.jpg' },
-      { key: 'peach',           file: 'peach.jpg' },
-      { key: 'lychee',          file: 'lychee.jpg' },
-      { key: 'strawberry',      file: 'strawberry.jpg' },
-      { key: 'matcha',          file: 'matcha.jpg' },
-      { key: 'wintermelon',     file: 'wintermelon.jpg' },
-      { key: 'passion',         file: 'passion.jpg' },
-      { key: 'lemon',           file: 'lemon.jpg' },
-      { key: 'cocoa',           file: 'cocoa.jpg' },
-      { key: 'fresh milk',      file: 'fresh-milk.jpg' },
-      { key: 'classic',         file: 'milk-tea.jpg' },
-      { key: 'milk tea',        file: 'milk-tea.jpg' },
-      // explicitly map unique names if you want:
-      { key: 'golden retriever', file: 'golden-retriever.jpg' }, 
-    ];
-
-    const pickImage = (name) => {
-      const n = (name || '').toLowerCase();
-      for (const { key, file } of imgByKeyword) {
-        if (n.includes(key)) return `/img/${file}`;
-      }
-      return '/ShareTea_logo.webp'; // fallback under /public
-    };
-
-    const items = rows.map(r => {
-      const name = r.product_name ?? 'Unnamed Item';
-      const priceNum = parseFloat(r.product_price ?? '0');
-      return {
-        id: r.product_id,                         
-        name,                                     
-        price: Number.isFinite(priceNum) ? priceNum : 0, 
-        img_url: pickImage(name),                
-        category_id: r.category_id
-      };
-    });
+    const { rows } = await pool.query(
+      'SELECT * FROM products;'
+    );
+    const items = rows.map(r => ({
+      id: r.product_id,
+      name: r.product_name,
+      price: Number(r.product_price),
+      tags: r.category_id,
+      img_url: "./public/img/mango.jpg"
+    }));
 
     res.render('menu', { items });
   } catch (err) {
@@ -284,8 +254,71 @@ app.get('/menu', async (req, res) => {
   }
 });
 
-// Order page (client-side cart)
-app.get('/order', (req, res) => res.render('order'));
+app.get('/order', async (req, res) => {
+    try {
+        // Fetch all categories
+        const categoriesQuery = 'SELECT category_id, category_name FROM categories;';
+        const { rows: categories } = await pool.query(categoriesQuery);
+
+        // Fetch products grouped by category
+        const productsQuery = `
+            SELECT 
+                products.product_name AS name, 
+                products.product_price AS price, 
+                products.category_id, 
+                categories.category_name AS category
+            FROM products
+            JOIN categories ON products.category_id = categories.category_id
+            ORDER BY categories.category_id;
+        `;
+        const { rows: products } = await pool.query(productsQuery);
+
+        // Fetch addons
+        const addonsQuery = `
+            SELECT 
+                addon_id AS id,
+                addon_name AS name,
+                addon_price AS price
+            FROM addons
+            WHERE is_available = true;
+        `;
+        const addons = (await pool.query(addonsQuery)).rows.map(addon => ({
+            ...addon,
+            price: parseFloat(addon.price),
+        }));
+        
+        // Group products by category
+        const groupedProducts = categories.map(category => {
+            return {
+                category: category.category_name,
+                categoryId: category.category_id,
+                products: products.filter(product => product.category_id === category.category_id)
+            };
+        });
+
+        const selectedCategory = req.query.category;
+
+        // Render the order page with categories, grouped products, and addons
+        res.render('order', { groupedProducts, selectedCategory, addons });
+    } catch (err) {
+        console.error('DB error:', err);
+        res.status(500).send('Database query failed');
+    }
+});
+
+app.get('/user', (req, res) => {
+    teammembers = []
+    pool
+        .query('SELECT * FROM employees;')
+        .then(query_res => {
+            for (let i = 0; i < query_res.rowCount; i++){
+                teammembers.push(query_res.rows[i]);
+            }
+            const data = {teammembers: teammembers};
+            console.log(teammembers);
+            res.render('user', data);
+        });
+});
 
 // -------- Translation setup (unused but harmless) --------
 const TRANSLATE_ENABLED = (process.env.TRANSLATE_ENABLED || 'false') === 'true';
@@ -294,7 +327,29 @@ const GCP_LOCATION = process.env.GCP_LOCATION || 'global';
 const translateClient = new translateV3.TranslationServiceClient();
 const PARENT = `projects/${PROJECT_ID}/locations/${GCP_LOCATION}`;
 
-// -------- Start server --------
+// TODO: HAO, next step is to get the data from frontend translate.js, and use API to translate these text, and then send them back
+// Need cache to reduce the space and the speed
+
+// Async function that calls weather api
+async function getWeather(lat, lon) {
+  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${WEATHER_API_KEY}&units=metric`;
+
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    console.log("Current weather:", data);
+    return data;
+  } catch (error) {
+    console.error("Error fetching weather:", error);
+  }
+}
+
+//test getWeather function
+getWeather(30.62798, -96.33441); 
+
+
+// ---- Start Server ----
 app.listen(port, () => {
   console.log(`App running at http://localhost:${port}`);
 });
