@@ -32,5 +32,5 @@ googleButton.addEventListener('click', e => {
     e.preventDefault();
 
     // attempt to authorize with google endpoint
-    fetch("/google/auth", { method: "GET" });
+    window.location.href = "/google/auth";
 });

@@ -8,6 +8,7 @@ const { v3: translateV3 } = require('@google-cloud/translate');
 const session = require('express-session');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20');
+const LocalStrategy = require('passport-local').Strategy;
 
 // ---- App Setup ----
 const app = express();
@@ -18,6 +19,7 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));       // ensure EJS looks in /views
 app.use(express.static(path.join(__dirname, 'public'))); // serve /public (images/css/js)
 app.use(express.json()); // makes sure that express can read json sent over https requests
+app.use(express.urlencoded({ extended: false })); // parses x-www-form-urlencoded
 
 // ---- Database Pool ----
 const pool = new Pool({
@@ -110,6 +112,39 @@ passport.use(new GoogleStrategy({
   }
 }));
 
+passport.use(new LocalStrategy(
+  { usernameField: 'email', passwordField: 'password' }, 
+  async (email, password, done) => {
+    // get hashedpassword from database
+    try {
+      const result = await pool.query('SELECT * FROM customers WHERE email = $1', [email]);
+
+      if (result.rows.length === 0) {
+        // no user found
+        return done(null, false, { message: "User not found" });
+      }
+
+      const user = result.rows[0];
+
+      // check if only have google account linked
+      if (!user.password_hash) {
+        return done(null, false, { message: "Sign in with Google or visit the Sign Up page to link this email to a local account"});
+      }
+
+      const hashedPassword = result.rows[0].password_hash;
+      const match = await bcrypt.compare(password, hashedPassword);
+
+      if (!match) {
+        return done(null, false, { message: "Incorrect password" });
+      }
+      
+      return done(null, user);
+    } catch (err) {
+      return done(err);
+    }
+  }
+));
+
 
 // ---- Routes ----
 
@@ -117,7 +152,7 @@ passport.use(new GoogleStrategy({
 app.get('/', (req, res) => {
   // TODO - Might change later
   if (req.isAuthenticated()) {
-    console.log("Logged in as user: " + req.user.customer_id);
+    console.log("Logged in as user: " + req.user.customer_name);
   }
   res.render('index');
 });
@@ -231,41 +266,25 @@ app.post('/employee-sign-up/attempt', async (req, res) => {
   }
 });
 
-app.post('/customer-sign-in/attempt', async (req, res) => {
-  const { email, password } = req.body;
-
-  // get hashedpassword from database
-  try {
-    const result = await pool.query('SELECT (password_hash) FROM customers WHERE email = $1', [email]);
-
-    if (result.rows.length === 0) {
-      // no user found
-      return res.json({ success: false, message: "User not found" });
+app.post('/customer-sign-in/attempt', (req, res) => {
+  passport.authenticate('local', (err, user, info) => {
+    if (err) {
+      return res.status(500).json({ success: false, message: 'Server error' });
     }
-
-    const user = result.rows[0];
-
-    // check if only have google account linked
-    if (!user.password_hash) {
-      return res.json({
-        success: false,
-        message: "Sign in with Google or visit the Sign Up page to link this email to a local account"
-      });
+    if (!user) {
+      // Authentication failed
+      return res.status(401).json({ success: false, message: info.message });
     }
-
-    const hashedPassword = result.rows[0].password_hash;
-    const match = await bcrypt.compare(password, hashedPassword);
-
-    if (!match) {
-      return res.json({ success: false, message: "Incorrect password" });
-    }
-    
-    res.json({ success: true, user: email});
-  } catch (err) {
-    console.error(err);
-    res.json({ success: false, message: "Server error"});
-  }
+    // Log in the user (establish session)
+    req.logIn(user, err => {
+      if (err) {
+        return res.status(500).json({ success: false, message: 'Login failed' });
+      }
+      return res.json({ success: true, user });
+    });
+  })(req, res);
 });
+
 
 app.post('/customer-sign-up/attempt', async (req, res) => {
   const { fullname, email, password } = req.body;

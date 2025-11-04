@@ -5,10 +5,11 @@ form.addEventListener('submit', e => {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     if (form.checkValidity()) {
+        console.log("Client");
         fetch("/customer-sign-in/attempt", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ email: email, password: password })
         })
         .then(res => res.json())
         .then(data => {
