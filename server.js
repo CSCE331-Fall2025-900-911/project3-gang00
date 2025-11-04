@@ -98,6 +98,58 @@ app.get('/menu', (req, res) => {
   res.render('menu', { items });
 });
 
+app.get('/order', async (req, res) => {
+    try {
+        // Fetch all categories
+        const categoriesQuery = 'SELECT category_id, category_name FROM categories;';
+        const { rows: categories } = await pool.query(categoriesQuery);
+
+        // Fetch products grouped by category
+        const productsQuery = `
+            SELECT 
+                products.product_name AS name, 
+                products.product_price AS price, 
+                products.category_id, 
+                categories.category_name AS category
+            FROM products
+            JOIN categories ON products.category_id = categories.category_id
+            ORDER BY categories.category_id;
+        `;
+        const { rows: products } = await pool.query(productsQuery);
+
+        // Fetch addons
+        const addonsQuery = `
+            SELECT 
+                addon_id AS id,
+                addon_name AS name,
+                addon_price AS price
+            FROM addons
+            WHERE is_available = true;
+        `;
+        const addons = (await pool.query(addonsQuery)).rows.map(addon => ({
+            ...addon,
+            price: parseFloat(addon.price),
+        }));
+        
+        // Group products by category
+        const groupedProducts = categories.map(category => {
+            return {
+                category: category.category_name,
+                categoryId: category.category_id,
+                products: products.filter(product => product.category_id === category.category_id)
+            };
+        });
+
+        const selectedCategory = req.query.category;
+
+        // Render the order page with categories, grouped products, and addons
+        res.render('order', { groupedProducts, selectedCategory, addons });
+    } catch (err) {
+        console.error('DB error:', err);
+        res.status(500).send('Database query failed');
+    }
+});
+
 app.get('/user', (req, res) => {
     teammembers = []
     pool
