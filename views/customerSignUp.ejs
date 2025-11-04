@@ -15,11 +15,11 @@
                 </a>
             </div>
             <ul class="nav-links">
-                <li><a href="/">Back To Home Page</a></li>
+                <li><a href="/">Back To Kiosk</a></li>
             </ul>
         </nav>
         <div class="signin-container">
-            <section class="signup-card" aria-labelledby="signin-title" >
+            <section class="signup-card" aria-labelledby="signin-title" style="height: 550px;">
                 <div class="brand"> 
                     <h1 id="signin-title">Customer Sign-Up Page</h1>
                     <p class="subtitle">Follow the prompts to create a new account!</p>
@@ -37,8 +37,14 @@
                         <input id="password" name="password" type="password" placeholder="Password" />
                     </div>
 
+                    <p class="subtitle" style="text-align: center;">Already have an account? <a href="/customer-sign-in">Sign in</a></p>
+
                     <button type="submit" class="primary">Create Account</button>
                 </form>
+                <div class="brand">
+                    <p class="subtitle">or</p>
+                    <button id="googleButton"><img src="/google-logo-icon.png" style="height: 20px;"> Sign in with Google</button>
+                </div>
             </section>
         </div>
     </div>

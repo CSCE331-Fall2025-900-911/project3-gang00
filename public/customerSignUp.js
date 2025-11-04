@@ -27,3 +27,10 @@ form.addEventListener('submit', e => {
         form.reportValidity();
     }
 });
+const googleButton = document.getElementById('googleButton');
+googleButton.addEventListener('click', e => {
+    e.preventDefault();
+
+    // attempt to authorize with google endpoint
+    fetch("/google/auth", { method: "GET" });
+});

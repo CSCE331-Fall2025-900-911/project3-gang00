@@ -22,3 +22,12 @@ form.addEventListener('submit', e => {
         form.reportValidity();
     }
 });
+const googleButton = document.getElementById('googleButton');
+googleButton.addEventListener('click', e => {
+    e.preventDefault();
+
+    console.log("Clicked sign in with google")
+
+    // attempt to authorize with google endpoint
+    window.location.href = "/google/auth";
+});
