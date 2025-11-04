@@ -19,25 +19,32 @@
             </ul>
         </nav>
         <div class="signin-container">
-            <section class="signin-card" aria-labelledby="signin-title" style="height: 350px;">
+            <section class="signin-card" aria-labelledby="signin-title" style="height: 460px;">
                 <div class="brand"> 
-                    <h1 id="signin-title">Sign-In Page</h1>
-                    <p class="subtitle">Sign in to continue to the employee interface</p>
+                    <h1 id="signin-title">Customer Sign-In Page</h1>
+                    <p class="subtitle">Sign in to continue browsing!</p>
                 </div>
 
                 <form id="signin-form" class="form" novalidate>
-                    <label for="username" class="visually-hidden">Username</label>
-                    <input id="username" name="username" type="username" placeholder="Username" />
+                    <label for="email" class="visually-hidden">Email Address</label>
+                    <input id="email" name="email" type="email" placeholder="Email" />
 
                     <label for="password" class="visually-hidden">Password</label>
                     <div class="password-row">
                         <input id="password" name="password" type="password" placeholder="Password" />
                     </div>
+                    
+                    <p class="subtitle" style="text-align: center;">Don't have an account? <a href="/customer-sign-up">Sign up</a></p>
 
                     <button type="submit" class="primary">Sign in</button>
+                    
                 </form>
+                <div class="brand">
+                    <p class="subtitle">or</p>
+                    <button id="googleButton" href="/google/auth"><img src="/google-logo-icon.png" style="height: 20px;"> Sign in with Google</button>
+                </div>
             </section>
         </div>
     </div>
-    <script src="/employeeSignIn.js"></script>
+    <script src="/customerSignIn.js"></script>
 </body>
