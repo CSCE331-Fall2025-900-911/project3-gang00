@@ -7,76 +7,109 @@
   <link rel="stylesheet" href="/styles.css">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
-  body {
-    font-family: 'Poppins', sans-serif;
-    background: #f8f4f4;
-  }
-  .menu-container {
-    max-width: 1200px;
-    margin: 24px auto;
-    padding: 0 24px;
-  }
-  .menu-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 24px;
-  }
-  .card {
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 12px;
-    background: #fff;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    transition: transform 0.1s ease-in-out;
-  }
-  .card:hover {
-    transform: translateY(-3px);
-  }
-  .card img {
-    width: 100%;
-    height: 180px;
-    object-fit: cover;
-    border-radius: 10px;
-  }
-  .card h3 {
-    margin: 10px 0 6px;
-    font-size: 16px;
-    font-weight: 600;
-  }
-  .price {
-    font-weight: 600;
-    margin-bottom: 8px;
-  }
-  .add-btn {
-    width: 100%;
-    padding: 10px;
-    border-radius: 10px;
-    border: none;
-    background: #111;
-    color: #fff;
-    cursor: pointer;
-    font-weight: 500;
-  }
-  .add-btn:hover {
-    background: #333;
-  }
-  .toolbar {
-    display:flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-  }
-  .cancel-order {
-    display: inline-block;
-    margin: 24px;
-    background: #ffe5e5;
-    padding: 16px 24px;
-    border-radius: 10px;
-    color: #000;
-    text-decoration: none;
-    font-weight: 500;
-  }
-</style>
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #f8f4f4;
+      margin: 0;
+      color: #111;
+    }
+
+    .menu-container {
+      max-width: 1200px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+
+    .toolbar {
+      display:flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    /* --- FORCE 3 COLUMNS ON DESKTOP --- */
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr)); /* 3 columns */
+      gap: 24px;
+      align-items: stretch;
+    }
+
+    /* Tablet: 2 columns */
+    @media (max-width: 1024px) {
+      .menu-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    /* Mobile: 1 column */
+    @media (max-width: 640px) {
+      .menu-grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 12px;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      transition: transform 0.1s ease-in-out;
+      display: flex;
+      flex-direction: column;
+    }
+    .card:hover { transform: translateY(-3px); }
+
+    .card img {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      border-radius: 10px;
+    }
+
+    .card h3 {
+      margin: 10px 0 6px;
+      font-size: 16px;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+
+    .price {
+      font-weight: 600;
+      margin: 0 0 8px;
+    }
+
+    .calories {
+      margin: 0 0 12px;
+      color: #6b7280;
+      font-size: 14px;
+    }
+
+    .add-btn {
+      margin-top: auto;
+      width: 100%;
+      padding: 10px;
+      border-radius: 10px;
+      border: none;
+      background: #111;
+      color: #fff;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .add-btn:hover { background: #333; }
+
+    .cancel-order {
+      display: inline-block;
+      margin: 24px;
+      background: #ffe5e5;
+      padding: 16px 24px;
+      border-radius: 10px;
+      color: #000;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    h1 { margin: 0; }
+  </style>
 </head>
 
 <body>
@@ -89,31 +122,39 @@
       </div>
     </div>
 
-      <% if (items && items.length > 0) { %>
-        <section class="menu-grid" aria-label="Drinks list">
-          <% items.forEach(item => { %>
-            <article class="card" tabindex="0" aria-labelledby="title-<%= item.id %>">
+    <% if (items && items.length > 0) { %>
+      <section class="menu-grid" aria-label="Drinks list">
+        <% items.forEach(item => { %>
+          <article class="card" tabindex="0" aria-labelledby="title-<%= item.id %>">
+            <% if (item.img_url) { %>
               <img src="<%= item.img_url %>" alt="<%= item.name %>" />
-              <h3 id="title-<%= item.id %>"><%= item.name %></h3>
-              <p class="price">$<%= Number(item.price).toFixed(2) %></p>
+            <% } %>
+            <h3 id="title-<%= item.id %>"><%= item.name %></h3>
+            <p class="price">$<%= Number(item.price).toFixed(2) %></p>
+            <% if (item.calories) { %>
               <p class="calories"><%= item.calories %> cal</p>
-              <button class="add-btn" type="button" data-id="<%= item.id %>">Add</button>
-            </article>
-          <% }) %>
-        </section>
-      <% } else { %>
-        <p>No menu items found.</p>
-      <% } %>
-    </main>
-
-    <a href="/" class="cancel-order">Back to Home</a>
+            <% } %>
+            <button class="add-btn" type="button" data-id="<%= item.id %>">Add</button>
+          </article>
+        <% }) %>
+      </section>
+    <% } else { %>
+      <p>No menu items found.</p>
+    <% } %>
   </main>
 
+  <a href="/" class="cancel-order">Back to Home</a>
+
   <script>
+    // font size controls (optional)
     const root = document.documentElement;
     let base = 16;
-    document.getElementById('fontUp').onclick   = () => { base = Math.min(base + 1, 22); root.style.fontSize = base + 'px'; };
-    document.getElementById('fontDown').onclick = () => { base = Math.max(base - 1, 14); root.style.fontSize = base + 'px'; };
+    const up = document.getElementById('fontUp');
+    const down = document.getElementById('fontDown');
+    if (up && down) {
+      up.onclick = () => { base = Math.min(base + 1, 22); root.style.fontSize = base + 'px'; };
+      down.onclick = () => { base = Math.max(base - 1, 14); root.style.fontSize = base + 'px'; };
+    }
   </script>
 </body>
 </html>
