@@ -92,8 +92,9 @@ passport.use(new GoogleStrategy({
   }
 }));
 
-// -------- Local login strategy --------
-passport.use(new LocalStrategy(
+// -------- Local strategies --------
+// Customer local
+passport.use('customer-local', new LocalStrategy(
   { usernameField: 'email', passwordField: 'password' },
   async (email, password, done) => {
     try {
@@ -114,11 +115,32 @@ passport.use(new LocalStrategy(
   }
 ));
 
+// Employee local
+passport.use('employee-local', new LocalStrategy(
+  { usernameField: 'username', passwordField: 'password' },
+  async (username, password, done) => {
+    try {
+      const result = await pool.query('SELECT * FROM employees WHERE username = $1', [username]);
+      if (result.rows.length === 0) {
+        return done(null, false, { message: 'User not found' });
+      }
+      const user = result.rows[0];
+      const match = await bcrypt.compare(password, user.password_hash);
+      if (!match) return done(null, false, { message: 'Incorrect password' });
+      done(null, user);
+    } catch (err) {
+      done(err, false, { message: 'Server error' });
+    }
+  }
+));
+
 // ---------------- ROUTES ----------------
 
 // Home
 app.get('/', (req, res) => {
-  if (req.isAuthenticated()) console.log('Logged in as:', req.user.customer_name);
+  if (req.isAuthenticated()) {
+    console.log('Logged in as user:', req.user.customer_name);
+  }
   res.render('index');
 });
 
@@ -128,7 +150,13 @@ app.get('/general-sign-in', (req, res) => res.render('generalSignIn'));
 app.get('/customer-sign-in', (req, res) => res.render('customerSignIn'));
 app.get('/employee-sign-up', (req, res) => res.render('employeeSignUp'));
 app.get('/customer-sign-up', (req, res) => res.render('customerSignUp'));
-app.get('/employee', (req, res) => res.render('employee'));
+
+// Employee portal (guarded)
+app.get('/employee', (req, res) => {
+  if (!req.isAuthenticated()) return res.redirect('/employee-sign-in');
+  if (req.user.employee_id === undefined) return res.redirect('/');
+  res.render('employee', { user: req.user });
+});
 
 // Help
 app.get('/help', (req, res) => {
@@ -147,30 +175,62 @@ app.get('/help', (req, res) => {
   res.render('help', { faqs, site });
 });
 
-// Employee sign in attempt
-app.post('/employee-sign-in/attempt', async (req, res) => {
-  const { username, password } = req.body;
+// Employee sign in attempt (passport)
+app.post('/employee-sign-in/attempt', (req, res) => {
+  passport.authenticate('employee-local', (err, user, info) => {
+    if (err) return res.status(500).json({ success: false, message: 'Server error' });
+    if (!user) return res.status(401).json({ success: false, message: info.message });
+    req.logIn(user, err2 => {
+      if (err2) return res.status(500).json({ success: false, message: 'Login failed' });
+      return res.json({ success: true, user });
+    });
+  })(req, res);
+});
+
+// Employee logout
+app.get('/employee/logout', (req, res) => {
+  req.logout(err => {
+    if (err) { return res.json({ success: false, message: 'Logout Failed' }); }
+    req.session.destroy(err2 => {
+      if (err2) { console.error(err2); }
+      res.redirect('/');
+    });
+  });
+});
+
+// Employee sign up attempt
+app.post('/employee-sign-up/attempt', async (req, res) => {
+  const { fullname, role, username, password } = req.body;
   try {
-    const result = await pool.query('SELECT (password_hash) FROM employees WHERE username = $1', [username]);
-    if (result.rows.length === 0) return res.json({ success: false, message: 'User not found' });
+    const salt = await bcrypt.genSalt();
+    const hashedPassword = await bcrypt.hash(password, salt);
 
-    const match = await bcrypt.compare(password, result.rows[0].password_hash);
-    if (!match) return res.json({ success: false, message: 'Incorrect password' });
+    const result = await pool.query(
+      `INSERT INTO employees
+       (employee_name, role, username, password_hash)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *;`,
+      [fullname, role, username, hashedPassword]
+    );
 
-    res.json({ success: true, user: username });
+    console.log('Inserted employee:', result.rows[0]);
+    res.json({ success: true });
   } catch (err) {
-    console.error(err);
-    res.json({ success: false, message: 'Server error' });
+    console.error('DB error:', err);
+    if (err.code === '23505') {
+      return res.json({ success: false, message: 'Username already exists' });
+    }
+    res.json({ success: false, message: 'Server error: ' + err });
   }
 });
 
 // Customer sign in attempt (local)
 app.post('/customer-sign-in/attempt', (req, res) => {
-  passport.authenticate('local', (err, user, info) => {
+  passport.authenticate('customer-local', (err, user, info) => {
     if (err) return res.status(500).json({ success: false, message: 'Server error' });
     if (!user) return res.status(401).json({ success: false, message: info.message });
-    req.logIn(user, err => {
-      if (err) return res.status(500).json({ success: false, message: 'Login failed' });
+    req.logIn(user, err2 => {
+      if (err2) return res.status(500).json({ success: false, message: 'Login failed' });
       return res.json({ success: true, user });
     });
   })(req, res);
@@ -182,23 +242,48 @@ app.post('/customer-sign-up/attempt', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM customers WHERE email = $1', [email]);
 
-    if (result.rows.length > 0 && result.rows[0].password_hash)
-      return res.json({ success: false, message: 'Account already exists' });
+    if (result.rows.length > 0) {
+      // Email exists
+      if (result.rows[0].password_hash !== null) {
+        // Already has local account
+        return res.json({ success: false, message: 'Account already exists for this email address!' });
+      } else {
+        // Google-linked only → add local password
+        const salt = await bcrypt.genSalt();
+        const hashedPassword = await bcrypt.hash(password, salt);
 
+        const updateResult = await pool.query(
+          `UPDATE customers
+           SET password_hash = $1
+           WHERE email = $2
+           RETURNING *;`,
+          [hashedPassword, email]
+        );
+
+        req.logIn(updateResult.rows[0], err => {
+          if (err) return res.status(500).json({ success: false, message: 'Login failed' });
+          return res.json({ success: true, message: 'Account now has local login capabilities!' });
+        });
+        return; // important: stop here
+      }
+    }
+
+    // Fresh insert
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    if (result.rows.length > 0) {
-      await pool.query('UPDATE customers SET password_hash = $1 WHERE email = $2;', [hashedPassword, email]);
-      return res.json({ success: true, message: 'Account linked successfully' });
-    }
-
-    await pool.query(
-      `INSERT INTO customers (customer_name, email, password_hash)
-       VALUES ($1, $2, $3);`,
+    const insertResult = await pool.query(
+      `INSERT INTO customers
+       (customer_name, email, password_hash)
+       VALUES ($1, $2, $3)
+       RETURNING *;`,
       [fullname, email, hashedPassword]
     );
-    res.json({ success: true });
+
+    req.logIn(insertResult.rows[0], err => {
+      if (err) return res.status(500).json({ success: false, message: 'Login failed' });
+      res.json({ success: true, user: req.user });
+    });
   } catch (err) {
     res.json({ success: false, message: 'Server error: ' + err });
   }
@@ -252,8 +337,8 @@ app.get('/menu', async (req, res) => {
         id: r.product_id,
         name: r.product_name,
         price: Number(r.product_price),
-        tags: r.category_id,          // placeholder; change to real tags if you add them
-        img_url: `/img/${imageFile}`, // served from /public/img
+        tags: r.category_id,          // placeholder; change later if you add real tags
+        img_url: `/img/${imageFile}`, // CORRECT path; served from /public/img
       };
     });
 
@@ -267,11 +352,9 @@ app.get('/menu', async (req, res) => {
 // Order page
 app.get('/order', async (req, res) => {
   try {
-    // Fetch all categories
     const categoriesQuery = 'SELECT category_id, category_name FROM categories;';
     const { rows: categories } = await pool.query(categoriesQuery);
 
-    // Fetch products with category names
     const productsQuery = `
       SELECT 
         products.product_name AS name, 
@@ -284,7 +367,6 @@ app.get('/order', async (req, res) => {
     `;
     const { rows: products } = await pool.query(productsQuery);
 
-    // Fetch addons
     const addonsQuery = `
       SELECT 
         addon_id AS id,
@@ -298,7 +380,6 @@ app.get('/order', async (req, res) => {
       price: parseFloat(a.price),
     }));
 
-    // Group products by category
     const groupedProducts = categories.map(category => ({
       category: category.category_name,
       categoryId: category.category_id,
@@ -320,7 +401,7 @@ const GCP_LOCATION = process.env.GCP_LOCATION || 'global';
 const translateClient = new translateV3.TranslationServiceClient();
 const PARENT = `projects/${PROJECT_ID}/locations/${GCP_LOCATION}`;
 
-// ---------- Weather helper (works on Node 18+ or older via dynamic import) ----------
+// ---------- Weather helper (Node 18+ has fetch; fallback if needed) ----------
 async function fetchCompat(url, options) {
   if (typeof fetch !== 'undefined') return fetch(url, options);
   const mod = await import('node-fetch');
