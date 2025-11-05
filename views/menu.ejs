@@ -112,8 +112,13 @@
   </style>
 </head>
 
-<body>
-  <main class="menu-container">
+<body style="overflow: hidden;">
+
+  <%- include('partials/kioskNavBar') %>
+
+  <%- include('partials/logoutModal') %>
+
+  <main class="menu-container" style="overflow-y: auto;">
     <div class="toolbar">
       <h1>Menu</h1>
       <div>
@@ -156,5 +161,6 @@
       down.onclick = () => { base = Math.max(base - 1, 14); root.style.fontSize = base + 'px'; };
     }
   </script>
+  <script src="/accountDropdown.js"></script>
 </body>
 </html>

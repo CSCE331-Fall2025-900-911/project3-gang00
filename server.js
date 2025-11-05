@@ -138,10 +138,10 @@ passport.use('employee-local', new LocalStrategy(
 
 // Home
 app.get('/', (req, res) => {
-  if (req.isAuthenticated()) {
-    console.log('Logged in as user:', req.user.customer_name);
+  if (req.isAuthenticated() && (req.user.customer_id !== undefined)) {
+    return res.render('index', { user: req.user });
   }
-  res.render('index');
+  res.render('index', { user: null });
 });
 
 // Sign-in/Sign-up pages
@@ -289,6 +289,17 @@ app.post('/customer-sign-up/attempt', async (req, res) => {
   }
 });
 
+// Customer logout
+app.get('/customer/logout', (req, res) => {
+  req.logout(err => {
+    if (err) { return res.json({ success: false, message: 'Logout Failed' }); }
+    req.session.destroy(err2 => {
+      if (err2) { console.error(err2); }
+      res.redirect('/');
+    });
+  });
+});
+
 // Google OAuth endpoints
 app.get('/google/auth', passport.authenticate('google', { scope: ['profile', 'email'] }));
 app.get('/customer-sign-in/google/callback',
@@ -305,7 +316,10 @@ app.get('/contact', (req, res) => {
     supportHours: 'Daily 10 AM - 8 PM',
     address: 'Zachry Engineering Center, 125 Spence St, College Station, TX 77840',
   };
-  res.render('contact', { site });
+  if (req.isAuthenticated() && (req.user.customer_id !== undefined)) {
+    return res.render('contact', { site: site, user: req.user });
+  }
+  res.render('contact', { site: site, user: null });
 });
 
 // Example DB page
@@ -342,7 +356,10 @@ app.get('/menu', async (req, res) => {
       };
     });
 
-    res.render('menu', { items });
+    if (req.isAuthenticated() && (req.user.customer_id !== undefined)) {
+      return res.render('menu', { items: items, user: req.user });
+    }
+    res.render('menu', { items: items, user: null });
   } catch (err) {
     console.error('DB error:', err);
     res.status(500).send('Database query failed');

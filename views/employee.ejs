@@ -26,7 +26,7 @@
                 </a>
 
                 <!-- Dropdown menu -->
-                <ul id="account-dropdown">
+                <ul id="account-dropdown" style="position: absolute; top: 100%; left: 0; display: none; width: 100%;">
                     <li><a href="javascript:void(0)" onclick="openLogoutModal()" style="display: block; padding: 8px 16px; text-decoration: none; color: black;">Sign out</a></li>
                 </ul>
             </li>
@@ -38,11 +38,11 @@
         <!-- Modal box -->
         <div id="modal-box">
             <h3 style="margin-bottom: 16px;">Sign Out</h3>
-            <p style="margin-bottom: 24px;">Are you sure you want to log out?</p>
+            <p style="margin-bottom: 24px;">Are you sure you want to exit your account?</p>
 
             <div style="display: flex; justify-content: center; gap: 16px;">
                 <button onclick="confirmLogout()" style="padding: 8px 16px; border: none; background: #d9534f; color: white; border-radius: 6px; cursor: pointer;">
-                    Log Out
+                    Sign Out
                 </button>
                 <button onclick="closeLogoutModal()" style="padding: 8px 16px; border: 1px solid #ccc; background: white; border-radius: 6px; cursor: pointer;">
                     Cancel
