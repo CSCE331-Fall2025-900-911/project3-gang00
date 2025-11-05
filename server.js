@@ -8,6 +8,7 @@ const { v3: translateV3 } = require('@google-cloud/translate');
 const session = require('express-session');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20');
+const { get } = require('https');
 const LocalStrategy = require('passport-local').Strategy;
 
 // ---- App Setup ----
@@ -212,9 +213,16 @@ app.get('/customer-sign-up', (req, res) => {
 });
 
 app.get('/employee', (req, res) => {
-  if (req.isAuthenticated()) {
+  if (!req.isAuthenticated()) {
+        // User is not logged in at all
+        return res.redirect('/employee-sign-in');
+    }
+    if (req.user.employee_id === undefined) {
+        // User is logged in but not an employee
+        return res.redirect('/');
+    }
+    // User is authenticated and is an employee
     res.render('employee', { user: req.user });
-  }
 });
 
 // Help
@@ -378,6 +386,16 @@ app.get('/customer-sign-in/google/callback',
     // Successful login
     res.redirect("/");
 });
+
+app.get('/employee/logout', (req, res) => {
+  req.logout(err => {
+    if (err) {return res.json({ success: false, message: "Logout Failed" });}
+    req.session.destroy(err => {
+      if (err) {console.error(err);}
+      res.redirect('/');
+    })
+  })
+})
 
 // Contact
 app.get('/contact', (req, res) => {

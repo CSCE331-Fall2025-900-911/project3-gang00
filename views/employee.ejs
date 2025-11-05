@@ -7,6 +7,53 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
 </head>
 <body>
+    <nav class="navbar" style="padding: 10px 10px;">
+        <div class="logo">
+            <a href="javascript:void(0)">
+                <img src="/ShareTea_logo.webp" alt="ShareTea Logo" class="logo-img">
+            </a>
+            <h1 style="font-size: 50px; font-weight: 500; margin-top: 10px;">Employees</h1>
+            
+        </div>
+        <ul class="nav-links">
+            <li><a href="/manager" style="display: flex; align-items: center; gap: 8px;"><img src="/accountant.png" style="height: 40px;">Managers</a></li>
+            
+            <!-- Account Dropdown -->
+            <li style="position: relative;">
+                <a href="javascript:void(0)" onclick="toggleAccountDropDown()" style="display: flex; align-items: center; gap: 8px;">
+                    <img src="/user.png" style="height: 40px;">
+                    <%= user.employee_name %>
+                </a>
+
+                <!-- Dropdown menu -->
+                <ul id="account-dropdown">
+                    <li><a href="javascript:void(0)" onclick="openLogoutModal()" style="display: block; padding: 8px 16px; text-decoration: none; color: black;">Sign out</a></li>
+                </ul>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Modal backdrop -->
+    <div id="logout-modal">
+        <!-- Modal box -->
+        <div id="modal-box">
+            <h3 style="margin-bottom: 16px;">Sign Out</h3>
+            <p style="margin-bottom: 24px;">Are you sure you want to log out?</p>
+
+            <div style="display: flex; justify-content: center; gap: 16px;">
+                <button onclick="confirmLogout()" style="padding: 8px 16px; border: none; background: #d9534f; color: white; border-radius: 6px; cursor: pointer;">
+                    Log Out
+                </button>
+                <button onclick="closeLogoutModal()" style="padding: 8px 16px; border: 1px solid #ccc; background: white; border-radius: 6px; cursor: pointer;">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main body of page -->
     <h1>Employee Page</h1>
-    <h2 id="Nametag">Welcome, <%= user.employee_name %>!</h2>
+    <h2>Welcome, <%= user.employee_name %>!</h2>
+
+    <script src="employee.js"></script>
 </body>
