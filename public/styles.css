@@ -216,6 +216,33 @@ input:focus{
     transform: scale(2);
 }
 
+.Translate-img {
+    width: 25px;
+    height: auto;
+    object-fit: contain;
+    display: block;
+    filter: brightness(0) saturate(100%) invert(0%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(90%) contrast(100%);
+    transition: filter 0.3s ease;
+}
+
+.Translate-img:hover {
+  transform: scale(1.1);
+}
+
+.translate-btn {
+    transform: scale(2);
+    background: #ffdddd;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    line-height: 1;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
 .center-container {
     display: flex;
     flex-direction: row;
