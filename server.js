@@ -377,9 +377,9 @@ app.get('/user', async (req, res) => {
 
 // -------- Menu Route (DB-backed) --------
 app.get('/menu', async (req, res) => {
-    const { rows } = await pool.query(
-      'SELECT * FROM products;'
-    );
+  try {
+    const { rows } = await pool.query('SELECT * FROM products;');
+
     const items = rows.map(r => ({
       id: r.product_id,
       name: r.product_name,
