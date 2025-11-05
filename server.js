@@ -8,6 +8,7 @@ const { v3: translateV3 } = require('@google-cloud/translate');
 const session = require('express-session');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20');
+const { get } = require('https');
 const LocalStrategy = require('passport-local').Strategy;
 
 const WEATHER_API_KEY = process.env.WEATHER_API_KEY;
@@ -92,9 +93,8 @@ passport.use(new GoogleStrategy({
   }
 }));
 
-// -------- Local login strategy --------
-passport.use(new LocalStrategy(
-  { usernameField: 'email', passwordField: 'password' },
+passport.use('customer-local', new LocalStrategy(
+  { usernameField: 'email', passwordField: 'password' }, 
   async (email, password, done) => {
     try {
       const result = await pool.query('SELECT * FROM customers WHERE email = $1', [email]);
@@ -114,21 +114,86 @@ passport.use(new LocalStrategy(
   }
 ));
 
+passport.use('employee-local', new LocalStrategy(
+  { usernameField: 'username', passwordField: 'password' }, 
+  async (username, password, done) => {
+    // get hashedpassword from database
+    try {
+      const result = await pool.query('SELECT * FROM employees WHERE username = $1', [username]);
+
+      if (result.rows.length === 0) {
+        // no user found
+        //return res.json({ success: false, message: "User not found" });
+        return done(null, false, { message: "User not found" });
+      }
+
+      const user = result.rows[0];
+
+      const hashedPassword = result.rows[0].password_hash;
+      const match = await bcrypt.compare(password, hashedPassword);
+
+      if (!match) {
+        //return res.json({ success: false, message: "Incorrect password" });
+        return done(null, false, { message: "Incorrect password"} );
+      }
+      
+      //res.json({ success: true, user: username});
+      done(null, user);
+    } catch (err) {
+      // console.error(err);
+      // res.json({ success: false, message: "Server error"});
+      done(err, false, { message: "Server error" });
+    }
+  }
+));
+
 //ROUTES 
 
 // Home
 app.get('/', (req, res) => {
-  if (req.isAuthenticated()) console.log("Logged in as:", req.user.customer_name);
+  if (req.isAuthenticated()) {
+    console.log("Logged in as user: " + req.user.customer_name);
+  }
   res.render('index');
 });
 
-// Sign-in/Sign-up pages
-app.get('/employee-sign-in', (req, res) => res.render('employeeSignIn'));
-app.get('/general-sign-in', (req, res) => res.render('generalSignIn'));
-app.get('/customer-sign-in', (req, res) => res.render('customerSignIn'));
-app.get('/employee-sign-up', (req, res) => res.render('employeeSignUp'));
-app.get('/customer-sign-up', (req, res) => res.render('customerSignUp'));
-app.get('/employee', (req, res) => res.render('employee'));
+// Employee sign in
+app.get('/employee-sign-in', (req, res) => {
+  res.render('employeeSignIn');
+});
+
+// General Sign in
+app.get('/general-sign-in', (req, res) => {
+  res.render('generalSignIn');
+});
+
+// Customer Sign in
+app.get('/customer-sign-in', (req, res) => {
+  res.render('customerSignIn');
+});
+
+// This will need to be protected in the future
+app.get('/employee-sign-up', (req, res) => {
+  res.render('employeeSignUp');
+});
+
+// This will need to be protected in the future
+app.get('/customer-sign-up', (req, res) => {
+  res.render('customerSignUp');
+});
+
+app.get('/employee', (req, res) => {
+  if (!req.isAuthenticated()) {
+        // User is not logged in at all
+        return res.redirect('/employee-sign-in');
+    }
+    if (req.user.employee_id === undefined) {
+        // User is logged in but not an employee
+        return res.redirect('/');
+    }
+    // User is authenticated and is an employee
+    res.render('employee', { user: req.user });
+});
 
 // Help
 app.get('/help', (req, res) => {
@@ -149,26 +214,63 @@ app.get('/help', (req, res) => {
 
 // Employee sign in attempt
 app.post('/employee-sign-in/attempt', async (req, res) => {
-  const { username, password } = req.body;
+  passport.authenticate('employee-local', (err, user, info) => {
+    if (err) {
+      return res.status(500).json({ success: false, message: 'Server error' });
+    }
+    if (!user) {
+      // Authentication failed
+      return res.status(401).json({ success: false, message: info.message });
+    }
+    // Log in the user (establish session)
+    req.logIn(user, err => {
+      if (err) {
+        return res.status(500).json({ success: false, message: 'Login failed' });
+      }
+      return res.json({ success: true, user });
+    });
+  })(req, res);
+});
+
+app.post('/employee-sign-up/attempt', async (req, res) => {
+  const { fullname, role, username, password } = req.body;
+
   try {
-    const result = await pool.query('SELECT (password_hash) FROM employees WHERE username = $1', [username]);
-    if (result.rows.length === 0) return res.json({ success: false, message: "User not found" });
+    const salt = await bcrypt.genSalt();
+    const hashedPassword = await bcrypt.hash(password, salt);
 
-    const match = await bcrypt.compare(password, result.rows[0].password_hash);
-    if (!match) return res.json({ success: false, message: "Incorrect password" });
-
-    res.json({ success: true, user: username });
+    const result = await pool.query(
+      `INSERT INTO employees
+      (employee_name, role, username, password_hash)
+      VALUES ($1, $2, $3, $4)
+      RETURNING *;`,
+      [fullname, role, username, hashedPassword]
+    );
+    
+    console.log("Inserted employee:", result.rows[0]);
+    res.json({ success: true});
   } catch (err) {
-    console.error(err);
-    res.json({ success: false, message: "Server error" });
+    console.error('DB error:', err);
+
+    if (err.code === '23505') { // unique violation in Postgres
+      return res.json({ success: false, message: "Username already exists" });
+    }
+
+    res.json({ success: false, message: "Server error: " + err});
   }
 });
 
 // Customer sign in attempt (local)
 app.post('/customer-sign-in/attempt', (req, res) => {
-  passport.authenticate('local', (err, user, info) => {
-    if (err) return res.status(500).json({ success: false, message: 'Server error' });
-    if (!user) return res.status(401).json({ success: false, message: info.message });
+  passport.authenticate('customer-local', (err, user, info) => {
+    if (err) {
+      return res.status(500).json({ success: false, message: 'Server error' });
+    }
+    if (!user) {
+      // Authentication failed
+      return res.status(401).json({ success: false, message: info.message });
+    }
+    // Log in the user (establish session)
     req.logIn(user, err => {
       if (err) return res.status(500).json({ success: false, message: 'Login failed' });
       return res.json({ success: true, user });
@@ -182,23 +284,52 @@ app.post('/customer-sign-up/attempt', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM customers WHERE email = $1', [email]);
 
-    if (result.rows.length > 0 && result.rows[0].password_hash)
-      return res.json({ success: false, message: "Account already exists" });
+    if (result.rows.length > 0) {
+      // email already exits in data base
+      if (result.rows[0].password_hash !== null) {
+        // already have local account
+        return res.json({ success: false, message: "Account already exists for this email address!"});
+      } else {
+        // have no local, but a google linked account
+        const salt = await bcrypt.genSalt();
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        const updateResult = await pool.query(
+          `UPDATE customers
+          SET password_hash = $1
+          WHERE email = $2
+          RETURNING *;`,
+          [hashedPassword, email]
+        );
+
+        // Log in the user (establish session)
+        req.logIn(updateResult.rows[0], err => {
+          if (err) {
+            return res.status(500).json({ success: false, message: 'Login failed' });
+          }
+          return res.json({ success: true, message: "Account now has local login capabilities!"});
+        });
+      }
+    }
 
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    if (result.rows.length > 0) {
-      await pool.query('UPDATE customers SET password_hash = $1 WHERE email = $2;', [hashedPassword, email]);
-      return res.json({ success: true, message: "Account linked successfully" });
-    }
-
-    await pool.query(
-      `INSERT INTO customers (customer_name, email, password_hash)
-       VALUES ($1, $2, $3);`,
+    const insertResult = await pool.query(
+      `INSERT INTO customers
+      (customer_name, email, password_hash)
+      VALUES ($1, $2, $3)
+      RETURNING *;`,
       [fullname, email, hashedPassword]
     );
-    res.json({ success: true });
+    
+    // Log in the user (establish session)
+    req.logIn(insertResult.rows[0], err => {
+      if (err) {
+        return res.status(500).json({ success: false, message: 'Login failed' });
+      }
+      res.json({ success: true, user: req.user});
+    });
   } catch (err) {
     res.json({ success: false, message: "Server error: " + err });
   }
@@ -210,6 +341,16 @@ app.get('/customer-sign-in/google/callback',
   passport.authenticate("google", { failureRedirect: "/" }),
   (req, res) => res.redirect("/")
 );
+
+app.get('/employee/logout', (req, res) => {
+  req.logout(err => {
+    if (err) {return res.json({ success: false, message: "Logout Failed" });}
+    req.session.destroy(err => {
+      if (err) {console.error(err);}
+      res.redirect('/');
+    })
+  })
+})
 
 // Contact
 app.get('/contact', (req, res) => {
