@@ -261,6 +261,55 @@ input:focus{
     transform: scale(2);
 }
 
+.lang-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.Translate-img {
+    width: 25px;
+    height: auto;
+    object-fit: contain;
+    display: block;
+    filter: brightness(0) saturate(100%) invert(0%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(90%) contrast(100%);
+    transition: filter 0.3s ease;
+}
+
+.Translate-img:hover {
+    transform: scale(1.1);
+}
+
+.translate-btn {
+    transform: scale(2);
+    background: #ffdddd;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    line-height: 1;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+/* 浮出式菜单 */
+.lang-menu {
+    position: absolute;
+    top: 120%; /* 稍微在按钮下方 */
+    right: 0;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    padding: 6px;
+    z-index: 999;
+}
+
+.hidden {
+    display: none;
+}
+
 .center-container {
     display: flex;
     flex-direction: row;
