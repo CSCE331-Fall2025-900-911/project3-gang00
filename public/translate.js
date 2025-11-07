@@ -74,7 +74,7 @@ async function i18nTranslateBatch(texts, target, source, mimeType) {
 }
 
 // run: traversal, group and translate, backfill
-async function runTranslate(targetLang) {
+export async function runTranslate(targetLang) {
     const target = targetLang || 'zh';
 
     const textNodes = i18nCollectTextNodes(document.body);

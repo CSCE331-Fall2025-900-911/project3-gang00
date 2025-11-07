@@ -31,6 +31,13 @@ html, body {
     flex-shrink: 0;
 }
 
+.logo {
+  display: flex;
+  flex-direction: horizontal;
+  align-items: center;
+  gap: 20px;
+}
+
 .logo-img {
     height: 50px;
     width: auto;
@@ -57,6 +64,44 @@ html, body {
 .nav-links li a:hover {
     background-color: #ffbbbb; /* hover effect */
     border-radius: 5px;
+}
+
+#account-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 0 0;
+  min-width: 160px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  z-index: 100;
+  list-style: none;
+  overflow: hidden;
+}
+
+#logout-modal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+  justify-content: center;
+  align-items: center;
+  z-index: 200;
+}
+
+#modal-box {
+  background: white;
+  border-radius: 12px;
+  padding: 24px 32px;
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  max-width: 400px;
+  width: 90%;
 }
 
 /* Sign In Pages */
@@ -216,6 +261,11 @@ input:focus{
     transform: scale(2);
 }
 
+.lang-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
 .Translate-img {
     width: 25px;
     height: auto;
@@ -226,7 +276,7 @@ input:focus{
 }
 
 .Translate-img:hover {
-  transform: scale(1.1);
+    transform: scale(1.1);
 }
 
 .translate-btn {
@@ -243,12 +293,30 @@ input:focus{
     transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
+/* 浮出式菜单 */
+.lang-menu {
+    position: absolute;
+    top: 120%; /* 稍微在按钮下方 */
+    right: 0;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    padding: 6px;
+    z-index: 999;
+}
+
+.hidden {
+    display: none;
+}
+
 .center-container {
     display: flex;
     flex-direction: row;
     justify-content: center;
     align-items: center;
     gap: 1rem;
+    height: 50vh;
     flex: 1;
 }
 
@@ -288,6 +356,105 @@ input:focus{
     background-color: #ffbbbb;
 }
 
+.clear-order {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    display: inline-block;
+    margin-top: 20px;
+    padding: 2rem 3rem;
+    font-size: 1.5rem;
+    background-color: #ffdddd;
+    color: black;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+.clear-order:hover {
+    background-color: #ffbbbb;
+}
+
 .contactGrid { 
     display: grid; gap: .75rem; 
+}
+
+.category-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: #ffdddd;
+    border-bottom: 1px solid #ddd;
+    z-index: 1000;
+    padding: 50px 0;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    font-size: 1.5rem;
+}
+
+.category-bar ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+}
+
+.category-bar li {
+    display: inline;
+}
+
+.category-bar a {
+    text-decoration: none;
+    color: #000000;
+    font-weight: bold;
+    transition: color 0.3s;
+}
+
+.category-bar a:hover {
+    color: #0056b3;
+}
+
+.order-summary {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    height: 20vh;
+}
+.contactUs {
+    max-width: 600px;  
+    margin: 0 auto;        
+    padding: 20px;
+}
+
+.contactGrid input,
+.contactGrid textarea {
+    width: 100%;          
+    max-width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    font-size: 1rem;
+
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+
+.contactGrid button {
+    padding: 12px;
+    width: 100%;
+    cursor: pointer;
+    background-color: #cc0000;
+    color: white;
+    font-weight: 500;
+    border: none;
+    border-radius: 6px;
+    transition: background 0.2s ease-in-out;
+}
+
+.contactGrid button:hover {
+    background-color: #a80000;
 }
