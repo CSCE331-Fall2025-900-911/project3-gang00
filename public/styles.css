@@ -249,7 +249,7 @@ input:focus{
   }
 
 .TextToSpeech-img {
-    width: 40px;
+    width: 30px;
     height: auto;
     object-fit: contain;
     display: block;
@@ -320,6 +320,82 @@ input:focus{
     flex: 1;
 }
 
+.order-center-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    max-width: 800px;
+    margin: 80px auto 0 auto; /* 👈 pushes content down by 80px */
+    padding: 30px;
+}
+
+/* Product list layout */
+.products {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.products ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+}
+
+.products li {
+    width: 100%;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    margin-bottom: 12px;
+    padding: 15px;
+    text-align: center;
+    position: relative;
+}
+
+/* Add-ons section beneath products */
+.addons-container {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    margin-top: 10px;
+    padding: 0 10px;
+    border-left: 3px solid #ccc;
+    background-color: #f9f9f9;
+    border-radius: 6px;
+    transition: all 0.3s ease-in-out;
+}
+
+.addons-container.show {
+    max-height: 1000px;
+    opacity: 1;
+    padding: 10px;
+}
+
+.order-summary {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 300px;                 /* adjust width as needed */
+    height: 100vh;                /* full viewport height */
+    background-color: #fff;
+    border-left: 2px solid #ddd;
+    box-shadow: -2px 0 6px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    overflow-y: auto;             /* scrolls if content overflows */
+    z-index: 100;                 /* stays above other content */
+    margin-top: 50px; /* Add spacing to ensure it appears beneath the center container */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+
 .center-container .menu-button {
     padding: 1.5rem 3rem;
     font-size: 1.5rem;
@@ -350,6 +426,7 @@ input:focus{
     text-decoration: none;
     border-radius: 5px;
     transition: background-color 0.3s;
+    border: none;
 }
 
 .cancel-order:hover {
@@ -359,7 +436,7 @@ input:focus{
 .clear-order {
     position: fixed;
     bottom: 1rem;
-    right: 1rem;
+    left: 17.5rem;
     display: inline-block;
     margin-top: 20px;
     padding: 2rem 3rem;
@@ -369,11 +446,31 @@ input:focus{
     text-decoration: none;
     border-radius: 5px;
     transition: background-color 0.3s;
+    border: none;
+
 }
 
 .clear-order:hover {
     background-color: #ffbbbb;
 }
+
+.checkout {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 1.25rem 2rem;
+    font-size: 1.5rem;
+    background-color: #ffdddd;
+    color: black;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+    border: none;
+}
+
+.checkout:hover {
+    background-color: #ffbbbb;
+}
+
 
 .contactGrid { 
     display: grid; gap: .75rem; 
@@ -408,22 +505,16 @@ input:focus{
 
 .category-bar a {
     text-decoration: none;
-    color: #000000;
-    font-weight: bold;
-    transition: color 0.3s;
+    color: black;
+    padding: 0.5rem 1rem;
+    transition: background-color 0.3s, color 0.3s;
 }
 
 .category-bar a:hover {
-    color: #0056b3;
+    background-color: #ffbbbb; /* hover effect */
+    border-radius: 5px;
 }
 
-.order-summary {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-    height: 20vh;
-}
 .contactUs {
     max-width: 600px;  
     margin: 0 auto;        
