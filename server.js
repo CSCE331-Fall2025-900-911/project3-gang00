@@ -470,6 +470,7 @@ const PARENT = `projects/${PROJECT_ID}/locations/${GCP_LOCATION}`;
 // Need cache to reduce the space and the speed
 
 // Async function that calls weather api
+/*
 async function getWeather(lat, lon) {
   const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${WEATHER_API_KEY}&units=metric`;
 
@@ -486,7 +487,7 @@ async function getWeather(lat, lon) {
 
 //test getWeather function
 getWeather(30.62798, -96.33441); 
-
+*/
 
 // ---- Start Server ----
 app.listen(port, () => {
