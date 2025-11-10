@@ -1,0 +1,48 @@
+<nav class="navbar">
+    <div class="logo">
+        <a href="/">
+            <img src="/ShareTea_logo.webp" alt="ShareTea Logo" class="logo-img">
+        </a>
+    </div>
+    <ul class="nav-links">
+        <li><a href="/menu">Menu</a></li>
+        <li><a href="/help">Help</a></li>
+        <li><a href="/contact">Contact</a></li>
+        <li>
+            <button class="speaker-btn" id="textToSpeechBtn">
+                <img src="/Muted.png" alt="Text-to-Speech" class="TextToSpeech-img" id="speakerImg">
+                </button>
+        </li>
+        <li class="lang-dropdown no-translate">
+            <button class="translate-btn" id="translateBtn">
+                <img src="/Translate.png" alt="Translate" class="Translate-img" id="translateImg">
+            </button>
+            <div id="langMenu" class="lang-menu hidden">
+                <select id="langSel" aria-label="Select language">
+                    <option value="en" selected>English</option>
+                    <option value="zh">中文</option>
+                    <option value="es">Español</option>
+                    <option value="fr">Français</option>
+                    <option value="ja">日本語</option>
+                </select>
+            </div>
+        </li>
+
+        <% if (user) { %>
+            <li style="position: relative;">
+                <a href="javascript:void(0)" onclick="toggleAccountDropDown()" style="display: flex; align-items: center; gap: 8px;">
+                    <img src="/user.png" style="height: 40px;">
+                    <%= user.customer_name %>
+                </a>
+
+                <!-- Dropdown menu -->
+                <ul id="account-dropdown" style="position: absolute; top: 100%; left: 0; display: none; width: 100%;">
+                    <li><a href="javascript:void(0)" onclick="viewAccount()" style="display: block; padding: 8px 16px; text-decoration: none; color: black;">View Account</a></li>
+                    <li><a href="javascript:void(0)" onclick="openLogoutModal()" style="display: block; padding: 8px 16px; text-decoration: none; color: black;">Sign out</a></li>
+                </ul>
+            </li>
+        <% } else { %>
+            <li><a href="/general-Sign-In">Sign in</a></li>
+        <% } %>
+    </ul>
+</nav>
