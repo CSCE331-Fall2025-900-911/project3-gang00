@@ -3,11 +3,12 @@ const express = require('express');
 const { Pool } = require('pg');
 const path = require('path');
 require('dotenv').config();
-const bcrypt = require("bcrypt");
+const bcrypt = require('bcrypt');
 const { v3: translateV3 } = require('@google-cloud/translate');
 const session = require('express-session');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20');
+const { get } = require('https');
 const LocalStrategy = require('passport-local').Strategy;
 
 const WEATHER_API_KEY = process.env.WEATHER_API_KEY;
@@ -16,14 +17,14 @@ const WEATHER_API_KEY = process.env.WEATHER_API_KEY;
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Views (EJS) + Static assets
+// -------- View engine + static assets --------
 app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));       // ensure EJS looks in /views
-app.use(express.static(path.join(__dirname, 'public'))); // serve /public (images/css/js)
-app.use(express.json()); // makes sure that express can read json sent over https requests
-app.use(express.urlencoded({ extended: false })); // parses x-www-form-urlencoded
+app.set('views', path.join(__dirname, 'views'));
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 
-// ---- Database Pool ----
+// -------- Database --------
 const pool = new Pool({
   user: process.env.PSQL_USER,
   host: process.env.PSQL_HOST,
@@ -35,111 +36,79 @@ const pool = new Pool({
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
-  try {
-    await pool.end();
-  } catch (e) {
-    // ignore
-  }
+  try { await pool.end(); } catch (e) {}
   console.log('Application successfully shutdown');
   process.exit(0);
 });
 
-// Setting up session logging with Passport (For signing in/out)
-// Session setup
+// -------- Session + Passport --------
 app.use(session({
-  secret: "supersecretkey",
+  secret: 'supersecretkey',
   resave: false,
-  saveUninitialized: true
+  saveUninitialized: true,
 }));
-
-// Initialize passport
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Passport serialize/deserialize
 passport.serializeUser((user, done) => done(null, user));
-passport.deserializeUser((user, done) => done(null, user)); 
+passport.deserializeUser((user, done) => done(null, user));
 
-// Configure Google Strategy
+// -------- Google OAuth --------
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: "/customer-sign-in/google/callback"
+  callbackURL: '/customer-sign-in/google/callback',
 }, async (accessToken, refreshToken, profile, done) => {
-  // Here’s where you would check if the user exists in your DB
-  // If not, create them.
-  // profile contains Google info like email, name, picture, etc.
   try {
     const googleId = profile.id;
     const email = profile.emails[0].value;
     const name = profile.displayName;
 
-    // check if customer with google id already exists
     let result = await pool.query('SELECT * FROM customers WHERE google_id = $1', [googleId]);
     let user;
 
     if (result.rows.length > 0) {
-      // Google account is already linked in db
       user = result.rows[0];
     } else {
-      // check if a local account has already been set up with this email
       const existingUser = await pool.query('SELECT * FROM customers WHERE email = $1', [email]);
-
       if (existingUser.rows.length > 0) {
-        // we already have a local account, so add the new link to google
         const updatedUser = await pool.query(
-          `UPDATE customers
-          SET google_id = $1
-          WHERE email = $2
-          RETURNING *;`,
+          `UPDATE customers SET google_id = $1 WHERE email = $2 RETURNING *;`,
           [googleId, email]
         );
-
         user = updatedUser.rows[0];
       } else {
-        // no local account and no google link
         const newUser = await pool.query(
           `INSERT INTO customers (customer_name, email, google_id, points)
-          VALUES ($1, $2, $3, $4)
-          RETURNING *;`,
+           VALUES ($1, $2, $3, $4)
+           RETURNING *;`,
           [name, email, googleId, 0]
         );
-        user = newUser.rows[0]
+        user = newUser.rows[0];
       }
     }
-
     return done(null, user);
   } catch (err) {
     return done(err, null);
   }
 }));
 
-passport.use(new LocalStrategy(
-  { usernameField: 'email', passwordField: 'password' }, 
+// -------- Local strategies --------
+// Customer local
+passport.use('customer-local', new LocalStrategy(
+  { usernameField: 'email', passwordField: 'password' },
   async (email, password, done) => {
-    // get hashedpassword from database
     try {
       const result = await pool.query('SELECT * FROM customers WHERE email = $1', [email]);
-
-      if (result.rows.length === 0) {
-        // no user found
-        return done(null, false, { message: "User not found" });
-      }
+      if (result.rows.length === 0) return done(null, false, { message: 'User not found' });
 
       const user = result.rows[0];
+      if (!user.password_hash)
+        return done(null, false, { message: 'Sign in with Google or link your email first' });
 
-      // check if only have google account linked
-      if (!user.password_hash) {
-        return done(null, false, { message: "Sign in with Google or visit the Sign Up page to link this email to a local account"});
-      }
+      const match = await bcrypt.compare(password, user.password_hash);
+      if (!match) return done(null, false, { message: 'Incorrect password' });
 
-      const hashedPassword = result.rows[0].password_hash;
-      const match = await bcrypt.compare(password, hashedPassword);
-
-      if (!match) {
-        return done(null, false, { message: "Incorrect password" });
-      }
-      
       return done(null, user);
     } catch (err) {
       return done(err);
@@ -147,46 +116,55 @@ passport.use(new LocalStrategy(
   }
 ));
 
+// Employee local
+passport.use('employee-local', new LocalStrategy(
+  { usernameField: 'username', passwordField: 'password' },
+  async (username, password, done) => {
+    try {
+      const result = await pool.query('SELECT * FROM employees WHERE username = $1', [username]);
+      if (result.rows.length === 0) {
+        return done(null, false, { message: 'User not found' });
+      }
+      const user = result.rows[0];
+      const match = await bcrypt.compare(password, user.password_hash);
+      if (!match) return done(null, false, { message: 'Incorrect password' });
+      done(null, user);
+    } catch (err) {
+      done(err, false, { message: 'Server error' });
+    }
+  }
+));
 
-// ---- Routes ----
+// ---------------- ROUTES ----------------
 
-// Redirect home to /menu so you see the menu immediately
+// Home
 app.get('/', (req, res) => {
-  // TODO - Might change later
   if (req.isAuthenticated()) {
-    console.log("Logged in as user: " + req.user.customer_name);
+    console.log('Logged in as user:', req.user.customer_name);
   }
   res.render('index');
 });
 
-// Employee sign in
-app.get('/employee-sign-in', (req, res) => {
-  res.render('employeeSignIn');
-});
+// Sign-in/Sign-up pages
+app.get('/employee-sign-in', (req, res) => res.render('employeeSignIn'));
+app.get('/general-sign-in', (req, res) => res.render('generalSignIn'));
+app.get('/customer-sign-in', (req, res) => res.render('customerSignIn'));
+app.get('/employee-sign-up', (req, res) => res.render('employeeSignUp'));
+app.get('/customer-sign-up', (req, res) => res.render('customerSignUp'));
 
-// General Sign in
-app.get('/general-sign-in', (req, res) => {
-  res.render('generalSignIn');
-});
-
-// Customer Sign in
-app.get('/customer-sign-in', (req, res) => {
-  res.render('customerSignIn');
-});
-
-// This will need to be protected in the future
-app.get('/employee-sign-up', (req, res) => {
-  res.render('employeeSignUp');
-});
-
-// This will need to be protected in the future
-app.get('/customer-sign-up', (req, res) => {
-  res.render('customerSignUp');
-});
-
+// Employee portal (guarded)
 app.get('/employee', (req, res) => {
-  res.render('employee');
-})
+  if (!req.isAuthenticated()) {
+        // User is not logged in at all
+        return res.redirect('/employee-sign-in');
+    }
+    if (req.user.employee_id === undefined) {
+        // User is logged in but not an employee
+        return res.redirect('/');
+    }
+    // User is authenticated and is an employee
+    res.render('employee', { user: req.user });
+});
 
 // Help
 app.get('/help', (req, res) => {
@@ -196,172 +174,146 @@ app.get('/help', (req, res) => {
     supportPhone: '(555) 123-4567',
     supportHours: 'Daily 10 AM - 8 PM',
   };
-
   const faqs = [
-    {
-      q: 'How do I place an order?',
-      a: 'Go to the Order page, pick items, customize, and checkout.',
-    },
-    {
-      q: 'Do you offer delivery?',
-      a: 'Yes. Delivery availability depends on your location and local partners.',
-    },
-    {
-      q: 'Can I customize my drink?',
-      a: 'Absolutely—choose sweetness, ice level, size, and toppings during checkout.',
-    },
-    {
-      q: 'Are allergen details available?',
-      a: 'Common allergens are listed on each product page; cross-contact may occur.',
-    },
+    { q: 'How do I place an order?', a: 'Go to the Order page, pick items, customize, and checkout.' },
+    { q: 'Do you offer delivery?', a: 'Yes, depending on your location.' },
+    { q: 'Can I customize my drink?', a: 'Yes—choose sweetness, ice, and toppings.' },
+    { q: 'Are allergen details available?', a: 'Allergen info is listed on each product page.' },
   ];
-
   res.render('help', { faqs, site });
 });
 
-// ---- Sign in and sign up functions ---- //
-app.post('/employee-sign-in/attempt', async (req, res) => {
-  const { username, password } = req.body;
-
-  // get hashedpassword from database
-  try {
-    const result = await pool.query('SELECT (password_hash) FROM employees WHERE username = $1', [username]);
-
-    if (result.rows.length === 0) {
-      // no user found
-      return res.json({ success: false, message: "User not found" });
-    }
-
-    const hashedPassword = result.rows[0].password_hash;
-    const match = await bcrypt.compare(password, hashedPassword);
-
-    if (!match) {
-      return res.json({ success: false, message: "Incorrect password" });
-    }
-    
-    res.json({ success: true, user: username});
-  } catch (err) {
-    console.error(err);
-    res.json({ success: false, message: "Server error"});
-  }
+// Employee sign in attempt (passport)
+app.post('/employee-sign-in/attempt', (req, res) => {
+  passport.authenticate('employee-local', (err, user, info) => {
+    if (err) return res.status(500).json({ success: false, message: 'Server error' });
+    if (!user) return res.status(401).json({ success: false, message: info.message });
+    req.logIn(user, err2 => {
+      if (err2) return res.status(500).json({ success: false, message: 'Login failed' });
+      return res.json({ success: true, user });
+    });
+  })(req, res);
 });
 
+// Employee logout
+app.get('/employee/logout', (req, res) => {
+  req.logout(err => {
+    if (err) { return res.json({ success: false, message: 'Logout Failed' }); }
+    req.session.destroy(err2 => {
+      if (err2) { console.error(err2); }
+      res.redirect('/');
+    });
+  });
+});
+
+// Employee sign up attempt
 app.post('/employee-sign-up/attempt', async (req, res) => {
   const { fullname, role, username, password } = req.body;
-
   try {
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(password, salt);
 
     const result = await pool.query(
       `INSERT INTO employees
-      (employee_name, role, username, password_hash)
-      VALUES ($1, $2, $3, $4)
-      RETURNING *;`,
+       (employee_name, role, username, password_hash)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *;`,
       [fullname, role, username, hashedPassword]
     );
-    
-    console.log("Inserted employee:", result.rows[0]);
-    res.json({ success: true});
+
+    console.log('Inserted employee:', result.rows[0]);
+    res.json({ success: true });
   } catch (err) {
     console.error('DB error:', err);
-
-    if (err.code === '23505') { // unique violation in Postgres
-      return res.json({ success: false, message: "Username already exists" });
+    if (err.code === '23505') {
+      return res.json({ success: false, message: 'Username already exists' });
     }
-
-    res.json({ success: false, message: "Server error: " + err});
+    res.json({ success: false, message: 'Server error: ' + err });
   }
 });
 
+// Customer sign in attempt (local)
 app.post('/customer-sign-in/attempt', (req, res) => {
-  passport.authenticate('local', (err, user, info) => {
-    if (err) {
-      return res.status(500).json({ success: false, message: 'Server error' });
-    }
-    if (!user) {
-      // Authentication failed
-      return res.status(401).json({ success: false, message: info.message });
-    }
-    // Log in the user (establish session)
-    req.logIn(user, err => {
-      if (err) {
-        return res.status(500).json({ success: false, message: 'Login failed' });
-      }
+  passport.authenticate('customer-local', (err, user, info) => {
+    if (err) return res.status(500).json({ success: false, message: 'Server error' });
+    if (!user) return res.status(401).json({ success: false, message: info.message });
+    req.logIn(user, err2 => {
+      if (err2) return res.status(500).json({ success: false, message: 'Login failed' });
       return res.json({ success: true, user });
     });
   })(req, res);
 });
 
-
+// Customer sign up attempt
 app.post('/customer-sign-up/attempt', async (req, res) => {
   const { fullname, email, password } = req.body;
-
   try {
     const result = await pool.query('SELECT * FROM customers WHERE email = $1', [email]);
 
     if (result.rows.length > 0) {
-      // email already exits in data base
+      // Email exists
       if (result.rows[0].password_hash !== null) {
-        // already have local account
-        return res.json({ success: false, message: "Account already exists for this email address!"});
+        // Already has local account
+        return res.json({ success: false, message: 'Account already exists for this email address!' });
       } else {
-        // have no local, but a google linked account
+        // Google-linked only → add local password
         const salt = await bcrypt.genSalt();
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        await pool.query(
+        const updateResult = await pool.query(
           `UPDATE customers
-          SET password_hash = $1
-          WHERE email = $2;`,
+           SET password_hash = $1
+           WHERE email = $2
+           RETURNING *;`,
           [hashedPassword, email]
         );
 
-        return res.json({ success: true, message: "Account now has local login capabilities!"});
+        req.logIn(updateResult.rows[0], err => {
+          if (err) return res.status(500).json({ success: false, message: 'Login failed' });
+          return res.json({ success: true, message: 'Account now has local login capabilities!' });
+        });
+        return; // important: stop here
       }
     }
 
+    // Fresh insert
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    await pool.query(
+    const insertResult = await pool.query(
       `INSERT INTO customers
-      (customer_name, email, password_hash)
-      VALUES ($1, $2, $3);`,
+       (customer_name, email, password_hash)
+       VALUES ($1, $2, $3)
+       RETURNING *;`,
       [fullname, email, hashedPassword]
     );
-    
-    console.log("Inserted customer:", result.rows[0]);
-    res.json({ success: true});
+
+    req.logIn(insertResult.rows[0], err => {
+      if (err) return res.status(500).json({ success: false, message: 'Login failed' });
+      res.json({ success: true, user: req.user });
+    });
   } catch (err) {
-    res.json({ success: false, message: "Server error: " + err});
+    res.json({ success: false, message: 'Server error: ' + err });
   }
 });
 
-// Attempt Google authentication
-app.get('/google/auth',
-  passport.authenticate("google", { scope: ["profile", "email"]})
-);
-
-// Google callback url
+// Google OAuth endpoints
+app.get('/google/auth', passport.authenticate('google', { scope: ['profile', 'email'] }));
 app.get('/customer-sign-in/google/callback',
-  passport.authenticate("google", { failureRedirect: "/" }), (req, res) => {
-    // Successful login
-    res.redirect("/");
-});
+  passport.authenticate('google', { failureRedirect: '/' }),
+  (req, res) => res.redirect('/')
+);
 
 // Contact
 app.get('/contact', (req, res) => {
-
-    //site object for supportcontact
-    const site = {
-      brand: 'Sharetea',
-      supportEmail: 'support@sharetea.mcgowan',
-      supportPhone: '(555) 123-4567',
-      supportHours: 'Daily 10 AM - 8 PM',
-      address: 'Zachry Engineering Center125 Spence St, College Station, TX 77840'
-    };
-    res.render('contact', {site});
+  const site = {
+    brand: 'Sharetea',
+    supportEmail: 'support@sharetea.mcgowan',
+    supportPhone: '(555) 123-4567',
+    supportHours: 'Daily 10 AM - 8 PM',
+    address: 'Zachry Engineering Center, 125 Spence St, College Station, TX 77840',
+  };
+  res.render('contact', { site });
 });
 
 // Example DB page
@@ -375,99 +327,161 @@ app.get('/user', async (req, res) => {
   }
 });
 
-// ---- Menu (sample items) ----
+// -------- Menu Route (DB-backed) --------
 app.get('/menu', async (req, res) => {
-    const { rows } = await pool.query(
-      'SELECT * FROM products;'
-    );
-    const items = rows.map(r => ({
-      id: r.product_id,
-      name: r.product_name,
-      price: Number(r.product_price),
-      tags: r.category_id,
-      img_url: "./public/img/mango.jpg"
-    }));
+  try {
+    const { rows } = await pool.query('SELECT * FROM products;');
+
+    const items = rows.map(r => {
+      const name = (r.product_name || '').toLowerCase();
+
+      // choose a local image based on keywords; defaults to milk-tea
+      let imageFile = 'milk-tea.jpg';
+      if (name.includes('thai')) imageFile = 'thai.jpg';
+      else if (name.includes('taro')) imageFile = 'taro.jpg';
+      else if (name.includes('mango')) imageFile = 'mango.jpg';
+
+      return {
+        id: r.product_id,
+        name: r.product_name,
+        price: Number(r.product_price),
+        tags: r.category_id,          // placeholder; change later if you add real tags
+        img_url: `/img/${imageFile}`, // CORRECT path; served from /public/img
+      };
+    });
 
     res.render('menu', { items });
+  } catch (err) {
+    console.error('DB error:', err);
+    res.status(500).send('Database query failed');
+  }
 });
 
+// Order page
 app.get('/order', async (req, res) => {
-    try {
-        // Fetch all categories
-        const categoriesQuery = 'SELECT category_id, category_name FROM categories;';
-        const { rows: categories } = await pool.query(categoriesQuery);
+  try {
+    const categoriesQuery = 'SELECT category_id, category_name FROM categories;';
+    const { rows: categories } = await pool.query(categoriesQuery);
 
-        // Fetch products grouped by category
-        const productsQuery = `
-            SELECT 
-                products.product_name AS name, 
-                products.product_price AS price, 
-                products.category_id, 
-                categories.category_name AS category
-            FROM products
-            JOIN categories ON products.category_id = categories.category_id
-            ORDER BY categories.category_id;
-        `;
-        const { rows: products } = await pool.query(productsQuery);
+    const productsQuery = `
+      SELECT 
+        products.product_name AS name, 
+        products.product_price AS price, 
+        products.category_id, 
+        categories.category_name AS category
+      FROM products
+      JOIN categories ON products.category_id = categories.category_id
+      ORDER BY categories.category_id;
+    `;
+    const { rows: products } = await pool.query(productsQuery);
 
-        // Fetch addons
-        const addonsQuery = `
-            SELECT 
-                addon_id AS id,
-                addon_name AS name,
-                addon_price AS price
-            FROM addons
-            WHERE is_available = true;
-        `;
-        const addons = (await pool.query(addonsQuery)).rows.map(addon => ({
-            ...addon,
-            price: parseFloat(addon.price),
-        }));
-        
-        // Group products by category
-        const groupedProducts = categories.map(category => {
-            return {
-                category: category.category_name,
-                categoryId: category.category_id,
-                products: products.filter(product => product.category_id === category.category_id)
-            };
-        });
+    const addonsQuery = `
+      SELECT 
+        addon_id AS id,
+        addon_name AS name,
+        addon_price AS price
+      FROM addons
+      WHERE is_available = true;
+    `;
+    const addons = (await pool.query(addonsQuery)).rows.map(a => ({
+      ...a,
+      price: parseFloat(a.price),
+    }));
 
-        const selectedCategory = req.query.category;
+    const groupedProducts = categories.map(category => ({
+      category: category.category_name,
+      categoryId: category.category_id,
+      products: products.filter(p => p.category_id === category.category_id),
+    }));
 
-        // Render the order page with categories, grouped products, and addons
-        res.render('order', { groupedProducts, selectedCategory, addons });
-    } catch (err) {
-        console.error('DB error:', err);
-        res.status(500).send('Database query failed');
-    }
+    const selectedCategory = req.query.category || null;
+    res.render('order', { groupedProducts, selectedCategory, addons });
+  } catch (err) {
+    console.error('DB error:', err);
+    res.status(500).send('Database query failed');
+  }
 });
 
-app.get('/user', (req, res) => {
-    teammembers = []
-    pool
-        .query('SELECT * FROM employees;')
-        .then(query_res => {
-            for (let i = 0; i < query_res.rowCount; i++){
-                teammembers.push(query_res.rows[i]);
-            }
-            const data = {teammembers: teammembers};
-            console.log(teammembers);
-            res.render('user', data);
-        });
-});
-
-// Enable translate functon
-// ---- Translation API (backend) ----
+// -------- Translation setup (unused but harmless) --------
 const TRANSLATE_ENABLED = (process.env.TRANSLATE_ENABLED || 'false') === 'true';
 const PROJECT_ID = process.env.PROJECT_ID;
 const GCP_LOCATION = process.env.GCP_LOCATION || 'global';
-
-const translateClient = new translateV3.TranslationServiceClient();
+const translateClient = new translateV3.TranslationServiceClient(); // connect the translate server
 const PARENT = `projects/${PROJECT_ID}/locations/${GCP_LOCATION}`;
 
-// TODO: HAO, next step is to get the data from frontend translate.js, and use API to translate these text, and then send them back
-// Need cache to reduce the space and the speed
+// A simple cache for translation
+const translateCache = new Map();
+function cacheKey(text, source, target, mime) {
+    // target language, source language, the type of text, the content of text
+    return `${target}|${source || ''}|${mime || 'text/plain'}|${text}`; 
+}
+
+app.post('/api/translate', async (req, res) => {
+    if (!TRANSLATE_ENABLED) 
+        return res.status(503).json({ error: 'translation disabled' });
+
+    const { texts, target, source, mimeType } = req.body || {};
+    if (!Array.isArray(texts) || texts.length === 0 || !target) {
+      return res.status(400).json({ error: 'texts(array)/target required' });
+    }
+
+    // hit cache & deduplicating
+    const results = new Array(texts.length);
+    const toQuery = [];
+    const idxMap = [];
+    for (let i = 0; i < texts.length; i++) {
+      const t = (texts[i] || '').trim();
+      const key = cacheKey(t, source, target, mimeType);
+      if (translateCache.has(key)) {
+        results[i] = translateCache.get(key);
+      } else {
+        toQuery.push(t); // there is no any result for this stuff that is needed to translate, push and query
+        idxMap.push(i); // record the index of this element
+      }
+    }
+
+    try {
+        if (toQuery.length > 0) {
+            const req = {
+              parent: PARENT,
+              contents: toQuery,
+              targetLanguageCode: target,
+              mimeType: mimeType || 'text/plain',
+            };
+            
+            if (source) {
+              req.sourceLanguageCode = source;
+            }
+            
+            const [resp] = await translateClient.translateText(req); // call translate API, and get the first element of the return array which is [all translated content]
+
+            const translated = (resp.translations || []).map(t => t.translatedText || ''); // map function will travesal all element of the array, and excute the function which is its param
+            translated.forEach((val, k) => {
+                const i = idxMap[k]; // find the corresponding index of the idxmap, and then we can put the translated content to the right places
+                results[i] = val;
+                const key = cacheKey(texts[i], source, target, mimeType);
+                translateCache.set(key, val);
+            });
+
+            // control the cache size
+            if (translateCache.size > 2000) {
+                translateCache.delete(translateCache.keys().next().value);
+            }
+        }
+
+        res.json({ results });
+    } catch (e) {
+        console.error('translate error:', e);
+        res.status(500).json({ error: 'translate failed' });
+    }
+});
+
+// ---------- Weather helper (Node 18+ has fetch; fallback if needed) ----------
+async function fetchCompat(url, options) {
+  if (typeof fetch !== 'undefined') return fetch(url, options);
+  const mod = await import('node-fetch');
+  return mod.default(url, options);
+}
 
 // Async function that calls weather api
 /*
@@ -491,5 +505,5 @@ getWeather(30.62798, -96.33441);
 
 // ---- Start Server ----
 app.listen(port, () => {
-  console.log(`Example app listening at http://localhost:${port}`);
+  console.log(`App running at http://localhost:${port}`);
 });

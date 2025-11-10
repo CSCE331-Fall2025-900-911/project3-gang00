@@ -20,6 +20,25 @@
                 <li><a href="/general-Sign-In">Sign in</a></li>
                 <li><a href="/help">Help</a></li>
                 <li><a href="/contact">Contact</a></li>
+                <li>
+                    <button class="speaker-btn" id="textToSpeechBtn">
+                        <img src="/Muted.png" alt="Text-to-Speech" class="TextToSpeech-img" id="speakerImg">
+                    </button>
+                </li>
+                <li class="lang-dropdown no-translate">
+                    <button class="translate-btn" id="translateBtn">
+                        <img src="/Translate.png" alt="Translate" class="Translate-img" id="translateImg">
+                    </button>
+                    <div id="langMenu" class="lang-menu hidden">
+                        <select id="langSel" aria-label="Select language">
+                          <option value="en" selected>English</option>
+                          <option value="zh">中文</option>
+                          <option value="es">Español</option>
+                          <option value="fr">Français</option>
+                          <option value="ja">日本語</option>
+                        </select>
+                    </div>
+                </li>
             </ul>
         </nav>
     </div>
@@ -40,6 +59,6 @@
         </section>
 
     </main>
-
-
+    <script type="module" src="/langSelect.js"></script>
+    <script src="/index.js"></script>
 </body>
