@@ -8,6 +8,7 @@ const { v3: translateV3 } = require('@google-cloud/translate');
 const session = require('express-session');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20');
+const { get } = require('https');
 const LocalStrategy = require('passport-local').Strategy;
 
 const WEATHER_API_KEY = process.env.WEATHER_API_KEY;
@@ -153,9 +154,16 @@ app.get('/customer-sign-up', (req, res) => res.render('customerSignUp'));
 
 // Employee portal (guarded)
 app.get('/employee', (req, res) => {
-  if (!req.isAuthenticated()) return res.redirect('/employee-sign-in');
-  if (req.user.employee_id === undefined) return res.redirect('/');
-  res.render('employee', { user: req.user });
+  if (!req.isAuthenticated()) {
+        // User is not logged in at all
+        return res.redirect('/employee-sign-in');
+    }
+    if (req.user.employee_id === undefined) {
+        // User is logged in but not an employee
+        return res.redirect('/');
+    }
+    // User is authenticated and is an employee
+    res.render('employee', { user: req.user });
 });
 
 // Help
@@ -415,8 +423,75 @@ app.get('/order', async (req, res) => {
 const TRANSLATE_ENABLED = (process.env.TRANSLATE_ENABLED || 'false') === 'true';
 const PROJECT_ID = process.env.PROJECT_ID;
 const GCP_LOCATION = process.env.GCP_LOCATION || 'global';
-const translateClient = new translateV3.TranslationServiceClient();
+const translateClient = new translateV3.TranslationServiceClient(); // connect the translate server
 const PARENT = `projects/${PROJECT_ID}/locations/${GCP_LOCATION}`;
+
+// A simple cache for translation
+const translateCache = new Map();
+function cacheKey(text, source, target, mime) {
+    // target language, source language, the type of text, the content of text
+    return `${target}|${source || ''}|${mime || 'text/plain'}|${text}`; 
+}
+
+app.post('/api/translate', async (req, res) => {
+    if (!TRANSLATE_ENABLED) 
+        return res.status(503).json({ error: 'translation disabled' });
+
+    const { texts, target, source, mimeType } = req.body || {};
+    if (!Array.isArray(texts) || texts.length === 0 || !target) {
+      return res.status(400).json({ error: 'texts(array)/target required' });
+    }
+
+    // hit cache & deduplicating
+    const results = new Array(texts.length);
+    const toQuery = [];
+    const idxMap = [];
+    for (let i = 0; i < texts.length; i++) {
+      const t = (texts[i] || '').trim();
+      const key = cacheKey(t, source, target, mimeType);
+      if (translateCache.has(key)) {
+        results[i] = translateCache.get(key);
+      } else {
+        toQuery.push(t); // there is no any result for this stuff that is needed to translate, push and query
+        idxMap.push(i); // record the index of this element
+      }
+    }
+
+    try {
+        if (toQuery.length > 0) {
+            const req = {
+              parent: PARENT,
+              contents: toQuery,
+              targetLanguageCode: target,
+              mimeType: mimeType || 'text/plain',
+            };
+            
+            if (source) {
+              req.sourceLanguageCode = source;
+            }
+            
+            const [resp] = await translateClient.translateText(req); // call translate API, and get the first element of the return array which is [all translated content]
+
+            const translated = (resp.translations || []).map(t => t.translatedText || ''); // map function will travesal all element of the array, and excute the function which is its param
+            translated.forEach((val, k) => {
+                const i = idxMap[k]; // find the corresponding index of the idxmap, and then we can put the translated content to the right places
+                results[i] = val;
+                const key = cacheKey(texts[i], source, target, mimeType);
+                translateCache.set(key, val);
+            });
+
+            // control the cache size
+            if (translateCache.size > 2000) {
+                translateCache.delete(translateCache.keys().next().value);
+            }
+        }
+
+        res.json({ results });
+    } catch (e) {
+        console.error('translate error:', e);
+        res.status(500).json({ error: 'translate failed' });
+    }
+});
 
 // ---------- Weather helper (Node 18+ has fetch; fallback if needed) ----------
 async function fetchCompat(url, options) {
@@ -425,22 +500,25 @@ async function fetchCompat(url, options) {
   return mod.default(url, options);
 }
 
+// Async function that calls weather api
+/*
 async function getWeather(lat, lon) {
-  const url =
-    `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}` +
-    `&appid=${WEATHER_API_KEY}&units=metric`;
+  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${WEATHER_API_KEY}&units=metric`;
+
   try {
-    const response = await fetchCompat(url);
+    const response = await fetch(url);
     const data = await response.json();
-    console.log('Current weather:', data);
+    
+    console.log("Current weather:", data);
     return data;
   } catch (error) {
-    console.error('Error fetching weather:', error);
+    console.error("Error fetching weather:", error);
   }
 }
 
-// Optional test call
-getWeather(30.62798, -96.33441);
+//test getWeather function
+getWeather(30.62798, -96.33441); 
+*/
 
 // ---- Start Server ----
 app.listen(port, () => {

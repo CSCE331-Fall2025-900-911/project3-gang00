@@ -3,6 +3,7 @@
 <head>
     <title>Order</title>
     <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script>
         function addToOrder(productId, productName, productPrice, isAddon = false) {
             const orderList = document.getElementById('order-list');
@@ -78,20 +79,25 @@
         }
 
         function showAddons(productId, productName, productPrice) {
-            // Clear previously selected add-ons
-            const addonCheckboxes = document.querySelectorAll('.addon-checkbox');
-            addonCheckboxes.forEach(checkbox => checkbox.checked = false);
+            // Hide all other add-on sections
+            document.querySelectorAll('.addons-container').forEach(section => {
+                section.classList.remove('show');
+            });
 
-            // Store the selected product details
+            // Save the selected product for later
             const selectedProduct = { id: productId, name: productName, price: productPrice };
             localStorage.setItem('selectedProduct', JSON.stringify(selectedProduct));
 
-            // Display the add-ons section
-            const addonsSection = document.getElementById('addons-section');
-            addonsSection.style.display = 'block';
+            // Show the chosen add-ons section
+            const addonsSection = document.getElementById(`addons-section-${productId}`);
+            if (addonsSection) {
+                addonsSection.classList.add('show');
+            } else {
+                console.warn(`Addons section not found for product ID: ${productId}`);
+            }
         }
 
-        function addProductWithAddons() {
+        function addProductWithAddons(productId) {
             // Retrieve the selected product details
             const selectedProduct = JSON.parse(localStorage.getItem('selectedProduct'));
 
@@ -108,7 +114,7 @@
             });
 
             // Hide the add-ons section
-            const addonsSection = document.getElementById('addons-section');
+            const addonsSection = document.getElementById(`addons-section-${productId}`);
             addonsSection.style.display = 'none';
 
             // Clear the selected product
@@ -131,59 +137,78 @@
                         <a href="/order?category=<%= group.categoryId %>"><%= group.category %></a>
                     </li>
                 <% }); %>
+                <li class="lang-dropdown no-translate">
+                    <button class="translate-btn" id="translateBtn">
+                        <img src="/Translate.png" alt="Translate" class="Translate-img" id="translateImg">
+                    </button>
+                    <div id="langMenu" class="lang-menu hidden">
+                        <select id="langSel" aria-label="Select language">
+                          <option value="en" selected>English</option>
+                          <option value="zh">中文</option>
+                          <option value="es">Español</option>
+                          <option value="fr">Français</option>
+                          <option value="ja">日本語</option>
+                        </select>
+                    </div>
+                </li>
             </ul>
         </div>
 
 
         <!-- Display products for the selected category -->
-        <div class="center-container">
+        <div class="order-center-container">
             <% if (selectedCategory) { %>
                 <% const selectedGroup = groupedProducts.find(group => group.categoryId == selectedCategory); %>
                 <% if (selectedGroup) { %>
                     <div class="products">
-                        <h2>Products in <%= selectedGroup.category %></h2>
+                        <h2><%= selectedGroup.category %></h2>
                         <ul>
-                            <% selectedGroup.products.forEach(product => { %>
+                            <% selectedGroup.products.forEach((product, index) => { %>
                                 <li>
                                     <strong><%= product.name %></strong> - $<%= product.price %>
-                                <button onclick="showAddons('<%= product.id %>', '<%= product.name %>', <%= product.price %>)">Select Add-ons</button>
+                                    <button onclick="showAddons('<%= index %>', '<%= product.name %>', <%= product.price %>)">Select Add-ons</button>
+                                    <div id="addons-section-<%= index %>" class="addons-container">  
+                                        <h2>Select Add-ons</h2>
+                                        <ul>
+                                            <% addons.forEach(addon => { %>
+                                                <li>
+                                                    <input type="checkbox" class="addon-checkbox" data-id="<%= addon.id %>" data-name="<%= addon.name %>" data-price="<%= addon.price %>">
+                                                    <strong><%= addon.name %></strong> - $<%= addon.price.toFixed(2) %>
+                                                    
+                                                </li>
+                                                
+                                            <% }); %>
+                                            <button onclick="addProductWithAddons('<%= index %>')">Add to Order</button> 
+                                        </ul>
+                                        
+                                    </div>
                                 </li>
                             <% }); %>
                         </ul>
+                        
                     </div>
                 <% } else { %>
                     <p>No products found for the selected category.</p>
                 <% } %>
             <% } %>
-
-            <!-- Add-ons Section -->
-            <div id="addons-section" style="display: none;">
-                <h2>Select Add-ons</h2>
-                <ul>
-                    <% addons.forEach(addon => { %>
-                        <li>
-                            <input type="checkbox" class="addon-checkbox" data-id="<%= addon.id %>" data-name="<%= addon.name %>" data-price="<%= addon.price %>">
-                            <strong><%= addon.name %></strong> - $<%= addon.price.toFixed(2) %>
-                        </li>
-                    <% }); %>
-                </ul>
-                <button onclick="addProductWithAddons()">Add to Order</button>
-            </div>
+            
         </div>
 
         <!-- Order Summary -->
-        <div class="center-container">
-            <div class="order-summary">
-                <h2>Order Summary</h2>
-                <ul id="order-list"></ul>
-                <p>Subtotal: $<span id="subtotal">0.00</span></p>
-                <p>Tax (8.25%): $<span id="tax">0.00</span></p>
-                <p>Total: $<span id="total">0.00</span></p>
-                <button onclick="clearOrder()">Checkout</button>
-            </div>
+         <div class="order-summary">
+            <h2>Order Summary</h2>
+            <ul id="order-list"></ul>
+            <p>Subtotal: $<span id="subtotal">0.00</span></p>
+            <p>Tax (8.25%): $<span id="tax">0.00</span></p>
+            <p>Total: $<span id="total">0.00</span></p>
+            <button class="checkout"onclick="clearOrder()">Checkout</button>
         </div>
+        
         <button class="clear-order" onclick="clearOrder()">Clear Order</button>
         <button class="cancel-order" onclick="clearOrder(); window.location.href='/'">Cancel Order</button>
     </div>
+
+    <script type="module" src="/langSelect.js"></script>
+    <script src="/index.js"></script>
 </body>
 </html>
