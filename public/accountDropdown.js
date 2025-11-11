@@ -27,3 +27,7 @@ async function confirmLogout() {
         window.location.href = res.url;
     }
 }
+
+async function viewAccount() {
+    window.location.href = '/profile';
+}

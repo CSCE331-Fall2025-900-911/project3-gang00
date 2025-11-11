@@ -180,7 +180,11 @@ app.get('/help', (req, res) => {
     { q: 'Can I customize my drink?', a: 'Yes—choose sweetness, ice, and toppings.' },
     { q: 'Are allergen details available?', a: 'Allergen info is listed on each product page.' },
   ];
-  res.render('help', { faqs, site });
+  
+  if (req.isAuthenticated() && req.user.customer_id !== undefined) {
+    return res.render('help', { faqs: faqs, site: site, user: req.user });
+  }
+  res.render('help', { faqs: faqs, site: site, user: null });
 });
 
 // Employee sign in attempt (passport)
@@ -315,6 +319,14 @@ app.get('/customer-sign-in/google/callback',
   (req, res) => res.redirect('/')
 );
 
+// View Profile
+app.get('/profile', (req, res) => {
+  if (req.isAuthenticated() && req.user.customer_id !== undefined) {
+    return res.render('profile', {user: req.user});
+  }
+  res.redirect('/');
+})
+
 // Contact
 app.get('/contact', (req, res) => {
   const site = {
@@ -343,6 +355,13 @@ app.get('/user', async (req, res) => {
 
 // -------- Menu Route (DB-backed) --------
 app.get('/menu', async (req, res) => {
+  let user;
+  if (req.isAuthenticated() && req.user.customer_id !== undefined) {
+    user = req.user;
+  } else {
+    user = null;
+  }
+
   try {
     const { rows } = await pool.query('SELECT * FROM products;');
 
@@ -412,7 +431,11 @@ app.get('/order', async (req, res) => {
     }));
 
     const selectedCategory = req.query.category || null;
-    res.render('order', { groupedProducts, selectedCategory, addons });
+
+    if (req.isAuthenticated() && req.user.customer_id !== undefined) {
+      return res.render('order', { groupedProducts: groupedProducts, selectedCategory: selectedCategory, addons: addons, user: req.user });
+    }
+    res.render('order', { groupedProducts: groupedProducts, selectedCategory: selectedCategory, addons: addons, user: null });
   } catch (err) {
     console.error('DB error:', err);
     res.status(500).send('Database query failed');
