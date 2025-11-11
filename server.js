@@ -166,6 +166,22 @@ app.get('/employee', (req, res) => {
     res.render('employee', { user: req.user });
 });
 
+// Manager portal (guarded)
+app.get('/manager', (req, res) => {
+  if (!req.isAuthenticated()) {
+    // User not logged in at all
+    return res.redirect('/employee-sign-in');
+  }
+  if (req.user.employee_id === undefined) {
+    // logged in but not as an employee
+    return res.redirect('/');
+  }
+  if (req.user.employee_role !== 'Manager') {
+    return res.json({success: false, message: "Your account does not have manager permissions!"});
+  }
+  res.render('manager', { user: req.user });
+})
+
 // Help
 app.get('/help', (req, res) => {
   const site = {
