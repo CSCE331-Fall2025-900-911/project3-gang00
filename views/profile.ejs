@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <head>
-    <title>Contact</title>
+    <title>Account</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,24 +11,11 @@
         <%- include('partials/kioskNavBar') %>
         <%- include('partials/logoutModal') %>
     </div>
-    <div class="ContactTitle">
-        <h1>Contact Us</h1>
-    </div>
-
     <main>
-        <!--Contact Us Section-->
-        <section>
-        <h2>Contact Us</h2>
-        <div class="contactUs">
-            <div><strong>Email:</strong> <a href="mailto:<%= site.supportEmail %>"><%= site.supportEmail %></a></div>
-            <div><strong>Phone:</strong> <a href="tel:+15551234567"><%= site.supportPhone %></a></div>
-            <div><strong>Support Hours:</strong> <%= site.supportHours %></div>
-            <div><strong>Address: </strong><%= site.address%></div>
-        </div>
-        </section>
-
+        <h1>View Profile:</h1>
+        <p1>Name: <%= user.customer_name %></p1>
     </main>
     <script type="module" src="/langSelect.js"></script>
-    <script src="/index.js"></script>
+    <script src="/profile.js"></script>
     <script src="/accountDropdown.js"></script>
 </body>
