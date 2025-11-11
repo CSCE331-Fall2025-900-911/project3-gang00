@@ -112,43 +112,13 @@
   </style>
 </head>
 
-<body>
-  <div>
-    <!-- <h1>ShareTea</h1> -->
-    <nav class="navbar">
-        <div class="logo">
-            <a href="/">
-                <img src="/ShareTea_logo.webp" alt="ShareTea Logo" class="logo-img">
-            </a>
-        </div>
-        <ul class="nav-links">
-            <li><a href="/menu">Menu</a></li>
-            <li><a href="/general-Sign-In">Sign in</a></li>
-            <li><a href="/help">Help</a></li>
-            <li><a href="/contact">Contact</a></li>
-            <li>
-                <button class="speaker-btn" id="textToSpeechBtn">
-                    <img src="/Muted.png" alt="Text-to-Speech" class="TextToSpeech-img" id="speakerImg">
-                </button>
-            </li>
-            <li class="lang-dropdown no-translate">
-                <button class="translate-btn" id="translateBtn">
-                    <img src="/Translate.png" alt="Translate" class="Translate-img" id="translateImg">
-                </button>
-                <div id="langMenu" class="lang-menu hidden">
-                    <select id="langSel" aria-label="Select language">
-                      <option value="en" selected>English</option>
-                      <option value="zh">中文</option>
-                      <option value="es">Español</option>
-                      <option value="fr">Français</option>
-                      <option value="ja">日本語</option>
-                    </select>
-                </div>
-            </li>
-        </ul>
-    </nav>
-  </div>
-  <main class="menu-container">
+<body style="overflow: hidden;">
+
+  <%- include('partials/kioskNavBar') %>
+
+  <%- include('partials/logoutModal') %>
+
+  <main class="menu-container" style="overflow-y: auto;">
     <div class="toolbar">
       <h1>Menu</h1>
       <div>
@@ -191,6 +161,7 @@
       down.onclick = () => { base = Math.max(base - 1, 14); root.style.fontSize = base + 'px'; };
     }
   </script>
+  <script src="/accountDropdown.js"></script>
   <script type="module" src="/langSelect.js"></script>
   <script src="/index.js"></script>
 </body>
