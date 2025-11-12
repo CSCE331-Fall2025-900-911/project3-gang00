@@ -539,25 +539,56 @@ async function fetchCompat(url, options) {
   return mod.default(url, options);
 }
 
-// Async function that calls weather api
-/*
-async function getWeather(lat, lon) {
-  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${WEATHER_API_KEY}&units=metric`;
-
+// Weather drink recommender route
+app.get('/api/kiosk-info', async (req, res) => {
   try {
-    const response = await fetch(url);
-    const data = await response.json();
-    
-    console.log("Current weather:", data);
-    return data;
-  } catch (error) {
-    console.error("Error fetching weather:", error);
-  }
-}
+    //College Station
+    const lat = 30.62798;   
+    const lon = -96.33441;
 
-//test getWeather function
-getWeather(30.62798, -96.33441); 
-*/
+    if (!WEATHER_API_KEY) {
+      return res.json({
+        ok: true,
+        weather: null,
+        recommendation: "Thai Pearl Milk Tea",
+        note: "Missing WEATHER_API_KEY; showing fallback."
+      });
+    }
+
+    const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${WEATHER_API_KEY}&units=metric`;
+    const r = await fetchCompat(url);
+    const data = await r.json();
+
+    const tempC = data?.main?.temp ?? null;
+    const condition = (data?.weather?.[0]?.main || '').toLowerCase();
+    const icon = data?.weather?.[0]?.icon || null;
+    const city = data?.name || 'Local';
+
+    function pickDrink(t, cond) {
+      if (t == null) return "Thai Pearl Milk Tea";
+      if (cond.includes('rain') || cond.includes('drizzle') || cond.includes('thunder')) {
+        return "Coffee Milk Tea w/ Coffee Jelly";
+      }
+      if (t >= 30) return "Berry Lychee Burst (extra ice)";
+      if (t >= 24) return "Taro Pearl Milk Tea (50% sugar)";
+      if (t >= 17) return "Classic Pearl Milk Tea";
+      return "Peppermint Tea";
+    }
+
+    res.json({
+      ok: true,
+      city,
+      tempC,
+      condition,
+      icon,
+      recommendation: pickDrink(tempC, condition)
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ ok: false, error: 'weather fetch failed' });
+  }
+});
+
 
 // ---- Start Server ----
 app.listen(port, () => {
