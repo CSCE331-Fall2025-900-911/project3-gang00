@@ -417,6 +417,7 @@ app.get('/order', async (req, res) => {
 
     const productsQuery = `
       SELECT 
+        products.product_id AS id,
         products.product_name AS name, 
         products.product_price AS price, 
         products.category_id, 
@@ -455,6 +456,91 @@ app.get('/order', async (req, res) => {
   } catch (err) {
     console.error('DB error:', err);
     res.status(500).send('Database query failed');
+  }
+});
+
+// -------- Checkout Route --------
+app.post('/checkout', async (req, res) => {
+  const { orderItems, subtotal } = req.body;
+
+  // Validate input
+  if (!Array.isArray(orderItems) || orderItems.length === 0) {
+    return res.status(400).json({ success: false, message: 'No items in order.' });
+  }
+
+  const subtotalNum = parseFloat(subtotal);
+  if (isNaN(subtotalNum)) {
+    return res.status(400).json({ success: false, message: 'Invalid subtotal.' });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // TEMP: hardcode employee_id until auth integration
+    const employee_id = 12;
+
+    // Fetch Water ingredient_id (assume infinite)
+    const waterRes = await client.query(`SELECT ingredient_id FROM ingredients WHERE ingredient_name = 'Water'`);
+    const water_id = waterRes.rows.length ? waterRes.rows[0].ingredient_id : null;
+
+    // Create order
+    const orderRes = await client.query(
+      `INSERT INTO orders (employee_id, sub_total)
+       VALUES ($1, $2)
+       RETURNING order_id;`,
+      [employee_id, subtotalNum]
+    );
+    const order_id = orderRes.rows[0].order_id;
+
+    // Loop through each item (products + add-ons)
+    for (const item of orderItems) {
+      const { productId, productPrice, item_count = 1, isAddon = false } = item;
+
+      if (isAddon) {
+        continue;
+      }
+
+      if (!productId || isNaN(productPrice)) {
+        throw new Error(`Invalid item: ${JSON.stringify(item)}`);
+      }
+
+      // Reduce ingredient quantities for this product (except Water)
+      const ingRes = await client.query(
+        `SELECT ingredient_id, ingredient_amount
+         FROM productingredients
+         WHERE product_id = $1;`,
+        [productId]
+      );
+
+      for (const ing of ingRes.rows) {
+        if (water_id && ing.ingredient_id === water_id) continue;
+        const totalUsed = ing.ingredient_amount * item_count;
+
+        await client.query(
+          `UPDATE ingredients
+           SET quantity = quantity - $1
+           WHERE ingredient_id = $2;`,
+          [totalUsed, ing.ingredient_id]
+        );
+      }
+
+      // Insert item into orderitems
+      await client.query(
+        `INSERT INTO orderitems (order_id, product_id, qty, item_price)
+         VALUES ($1, $2, $3, $4);`,
+        [order_id, productId, item_count, productPrice]
+      );
+    }
+
+    await client.query('COMMIT');
+    res.json({ success: true, order_id });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Checkout error:', err);
+    res.status(500).json({ success: false, message: 'Checkout failed.' });
+  } finally {
+    client.release();
   }
 });
 
