@@ -414,6 +414,28 @@ input:focus{
 
 .cancel-order {
     position: fixed;
+    bottom: 8.75rem;
+    left: 1rem;
+    display: inline-block;
+    margin-top: 20px;
+    padding: 2rem 3rem;
+    font-size: 1.5rem;
+    background-color: #ffdddd;
+    color: black;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+    border: none;
+    width: 15rem;
+    text-align: center;
+}
+
+.cancel-order:hover {
+    background-color: #ffbbbb;
+}
+
+.clear-order {
+    position: fixed;
     bottom: 1rem;
     left: 1rem;
     display: inline-block;
@@ -426,27 +448,8 @@ input:focus{
     border-radius: 5px;
     transition: background-color 0.3s;
     border: none;
-}
-
-.cancel-order:hover {
-    background-color: #ffbbbb;
-}
-
-.clear-order {
-    position: fixed;
-    bottom: 1rem;
-    left: 17.5rem;
-    display: inline-block;
-    margin-top: 20px;
-    padding: 2rem 3rem;
-    font-size: 1.5rem;
-    background-color: #ffdddd;
-    color: black;
-    text-decoration: none;
-    border-radius: 5px;
-    transition: background-color 0.3s;
-    border: none;
-
+    width: 15rem;
+    text-align: center;
 }
 
 .clear-order:hover {
