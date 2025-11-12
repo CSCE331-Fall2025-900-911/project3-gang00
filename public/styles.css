@@ -548,3 +548,83 @@ input:focus{
 .contactGrid button:hover {
     background-color: #a80000;
 }
+
+.weather-dropdown {
+  position: relative;
+}
+
+.weather-btn {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+  line-height: 0;
+}
+
+.weather-btn__img {
+  height: 40px;
+  width: auto;
+  vertical-align: middle;
+}
+
+.weather-panel {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  min-width: 260px;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 999;
+}
+
+.weather-panel.is-open {
+  display: block;
+}
+
+.weather-content {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.weather-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.weather-icon {
+  width: 40px;
+  height: 40px;
+}
+
+.weather-icon img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.weather-meta { }
+
+.weather-city {
+  font-weight: 600;
+}
+
+.weather-line { }
+
+.weather-reco {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #eee;
+}
+
+.weather-reco__title {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.weather-reco__text { }

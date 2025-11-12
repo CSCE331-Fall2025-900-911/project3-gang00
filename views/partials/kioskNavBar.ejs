@@ -8,11 +8,29 @@
         <li><a href="/menu">Menu</a></li>
         <li><a href="/help">Help</a></li>
         <li><a href="/contact">Contact</a></li>
+
         <li class="weather-dropdown">
-            <button class="weather-btn">
-                <img src="/weather.png" alt="Weather" style="height:40px;width:auto;vertical-align:middle;">
-            </button>
+        <button class="weather-btn" id="weatherBtn" aria-expanded="false" aria-controls="weatherPanel">
+            <img src="/weather.png" alt="Weather" class="weather-btn__img">
+        </button>
+
+        <div id="weatherPanel" class="weather-panel" role="region" aria-label="Weather and recommendation">
+            <div id="weatherContent" class="weather-content">
+            <div class="weather-header">
+                <div id="wxIcon" class="weather-icon"></div>
+                <div class="weather-meta">
+                <div id="wxCity" class="weather-city">—</div>
+                <div class="weather-line"><span id="wxTemp">—</span> · <span id="wxCond">—</span></div>
+                </div>
+            </div>
+            <div class="weather-reco">
+                <div class="weather-reco__title">Recommended drink</div>
+                <div id="wxDrink" class="weather-reco__text">—</div>
+            </div>
+            </div>
+        </div>
         </li>
+
         <li>
             <button class="speaker-btn" id="textToSpeechBtn">
                 <img src="/Muted.png" alt="Text-to-Speech" class="TextToSpeech-img" id="speakerImg">
