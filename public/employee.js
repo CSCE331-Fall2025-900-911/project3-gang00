@@ -1,3 +1,8 @@
+// async function goToManager() {
+//     const res = await fetch('/manager', {method: 'GET'});
+//     if (res)
+// }
+
 function toggleAccountDropDown() {
     const dropdown = document.getElementById('account-dropdown');
     const isVisible = dropdown.style.display === 'block';
