@@ -293,10 +293,9 @@ input:focus{
     transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
-/* 浮出式菜单 */
 .lang-menu {
     position: absolute;
-    top: 120%; /* 稍微在按钮下方 */
+    top: 120%;
     right: 0;
     background-color: #fff;
     border: 1px solid #ccc;
