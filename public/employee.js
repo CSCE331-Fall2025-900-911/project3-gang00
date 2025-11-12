@@ -1,7 +1,13 @@
-// async function goToManager() {
-//     const res = await fetch('/manager', {method: 'GET'});
-//     if (res)
-// }
+async function goToManager() {
+    const res = await fetch('/manager/check-credentials');
+    const data = await res.json();
+
+    if (data.success) {
+        window.location.href = '/manager';
+    } else {
+        alert(data.message);
+    }
+}
 
 function toggleAccountDropDown() {
     const dropdown = document.getElementById('account-dropdown');

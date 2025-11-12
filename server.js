@@ -166,6 +166,22 @@ app.get('/employee', (req, res) => {
     res.render('employee', { user: req.user });
 });
 
+// Check manager credentials
+app.get('/manager/check-credentials', (req, res) => {
+  if (!req.isAuthenticated()) {
+    // User not logged in at all
+    return res.json({success: false, message: "You are not signed in!"});
+  }
+  if (req.user.employee_id === undefined) {
+    // logged in but not as an employee
+    return res.json({success: false, message: "You are not signed in as an employee!"});
+  }
+  if (req.user.role !== 'Manager') {
+    return res.json({success: false, message: "Your account does not have manager permissions!"});
+  }
+  res.json({success: true});
+})
+
 // Manager portal (guarded)
 app.get('/manager', (req, res) => {
   if (!req.isAuthenticated()) {
@@ -176,7 +192,7 @@ app.get('/manager', (req, res) => {
     // logged in but not as an employee
     return res.redirect('/');
   }
-  if (req.user.employee_role !== 'Manager') {
+  if (req.user.role !== 'Manager') {
     return res.json({success: false, message: "Your account does not have manager permissions!"});
   }
   res.render('manager', { user: req.user });
