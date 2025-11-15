@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<head>
+    <title>ShareTea Inventory</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav id="navbar" class="navbar" style="padding: 10px 10px;">
+        <div style="display: flex; flex-direction: row; align-items: center;">
+            <a href="/manager" style="margin-left: 10px; margin-right: 20px;"><img src="/img/management/arrow-left.png" class="back-arrow"></a>
+            <div>
+                <p1 style="font-weight: 500;">Managers</p1>
+                <h1 style="font-size: 50px; font-weight: 600; margin-top: -15px;">Inventory</h1>
+            </div>
+            
+        </div>
+        <ul class="nav-links">
+            <li><a href="javascript:void(0)" onclick="openUpdateBox()" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: black;">
+                <img src="/img/management/changes.png" style="height: 40px;">
+                Update Selected Ingredient
+            </a></li>
+
+            <li><a href="javascript:void(0)" onclick="openAddBox()" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: black;">
+                <img src="/img/management/add.png" style="height: 40px;">
+                Add Ingredient
+            </a></li>
+        </ul>
+    </nav>
+
+    <!-- Modal backdrop -->
+    <div class="modal" id="update-modal">
+        <!-- Modal box -->
+        <div id="modal-box">
+            <h3 style="margin-bottom: 16px;">Update Ingredient</h3>
+
+            <form id="update-ingredient-form" class="form" novalidate>
+                <label for="name" class="visually-hidden">Ingredient Name:</label>
+                <input id="name-update" name="name" type="name" placeholder="Name" />
+
+                <label for="quantity" class="visually-hidden">Quantity:</label>
+                <input id="quantity-update" name="quantity" type="quantity" placeholder="Quantity" />
+
+                <label for="unit" class="visually-hidden">Unit (g/ml):</label>
+                <input id="unit-update" name="unit" type="unit" placeholder="Unit" />
+            </form>
+
+            <div style="display: flex; justify-content: center; gap: 16px; margin-top: 20px;">
+                <button onclick="updateIngredient()" style="padding: 8px 16px; border: none; background: #d9534f; color: white; border-radius: 6px; cursor: pointer;">
+                    Update
+                </button>
+                <button onclick="closeUpdateBox()" style="padding: 8px 16px; border: 1px solid #ccc; background: white; border-radius: 6px; cursor: pointer;">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal backdrop -->
+    <div class="modal" id="add-modal">
+        <!-- Modal box -->
+        <div id="modal-box">
+            <h3 style="margin-bottom: 16px;">Add Ingredient</h3>
+
+            <form id="add-ingredient-form" class="form" novalidate>
+                <label for="name" class="visually-hidden">Ingredient Name:</label>
+                <input id="name-add" name="name" type="name" placeholder="Name" />
+
+                <label for="quantity" class="visually-hidden">Quantity:</label>
+                <input id="quantity-add" name="quantity" type="quantity" placeholder="Quantity" />
+
+                <label for="unit" class="visually-hidden">Unit (g/ml):</label>
+                <input id="unit-add" name="unit" type="unit" placeholder="Unit" />
+            </form>
+
+            <div style="display: flex; justify-content: center; gap: 16px; margin-top: 20px;">
+                <button onclick="addIngredient()" style="padding: 8px 16px; border: none; background: #d9534f; color: white; border-radius: 6px; cursor: pointer;">
+                    Add
+                </button>
+                <button onclick="closeAddBox()" style="padding: 8px 16px; border: 1px solid #ccc; background: white; border-radius: 6px; cursor: pointer;">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <section style="display: flex; height: inherit;">
+        <div class="left">
+            <div class="tableContainer">
+                <table class="myTable" id="myTable">
+                    <!-- <caption>Inventory (Ingredient Counts)</caption> -->
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Ingredient</th>
+                            <th>Amount</th>
+                            <th>Unit</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% data.forEach(ingredient => { %>
+                            <tr>
+                                <td><%= ingredient.ingredient_id %></td>
+                                <td><%= ingredient.ingredient_name %></td>
+                                <td><%= ingredient.quantity %></td>
+                                <td><%= ingredient.ingredient_unit %></td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="right">
+            <canvas id="inventoryChart" width="600px" height="550px" style="box-shadow:0 4px 12px rgba(0,0,0,0.4);"></canvas>
+        </div>
+    </section>
+
+    <script>
+        const chartData = <%- JSON.stringify(data) %>;
+        const labels = chartData.map(row => row.ingredient_name);
+        const values = chartData.map(row => row.quantity);
+    </script>
+    <script type="module" src="/langSelect.js"></script>
+    <script src="/index.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/inventory.js"></script>
+</body> 
