@@ -692,6 +692,48 @@ app.get('/api/kiosk-info', async (req, res) => {
 });
 
 
+// ---- Manager Routes ----
+app.get('/manager/inventory', async (req, res) => {
+  if (req.isAuthenticated() && req.user.role === 'Manager') {
+    // go ahead and get inventory data from db
+    try {
+      const { rows } = await pool.query('SELECT ingredient_id, ingredient_name, quantity, ingredient_unit FROM ingredients ORDER BY ingredient_id;');
+      return res.render('manager/inventory', { user: req.user, data: rows });
+    } catch (err) {
+      console.error('DB error:', err);
+      res.status(500).send('Database query failed');
+    }
+  }
+  res.redirect('/manager');
+});
+
+app.post('/manager/inventory/update', async (req, res) => {
+  try {
+    await pool.query('UPDATE ingredients SET ingredient_name = $1, quantity = $2, ingredient_unit = $3 WHERE ingredient_id = $4;', 
+      [req.body.name, req.body.quantity, req.body.unit, req.body.id]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error('DB error:', err);
+    res.json({ success: false, message: "Database query failed"});
+  }
+});
+
+app.post('/manager/inventory/add', async (req, res) => {
+  try {
+    const fullAmount = req.body.quantity;
+    const restockAmount = Math.floor(req.body.quantity / 3);
+    await pool.query('INSERT INTO ingredients (ingredient_name, quantity, minimum_quantity, full_quantity, ingredient_unit) VALUES ($1, $2, $3, $4, $5);', 
+      [req.body.name, req.body.quantity, fullAmount, restockAmount, req.body.unit]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error('DB error:', err);
+    res.json({ success: false, message: "Database query failed"});
+  }
+});
+
+
 // ---- Start Server ----
 app.listen(port, () => {
   console.log(`App running at http://localhost:${port}`);
