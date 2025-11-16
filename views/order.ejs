@@ -78,47 +78,81 @@
             document.getElementById('total').textContent = '0.00';
         }
 
-        function showAddons(productId, productName, productPrice) {
-            // Hide all other add-on sections
-            document.querySelectorAll('.addons-container').forEach(section => {
-                section.classList.remove('show');
-            });
+        async function checkoutOrder() {
+            const orderData = JSON.parse(localStorage.getItem('orderData'));
+            if (!orderData || orderData.items.length === 0) {
+                alert("Your order is empty!");
+                return;
+            }
 
-            // Save the selected product for later
-            const selectedProduct = { id: productId, name: productName, price: productPrice };
-            localStorage.setItem('selectedProduct', JSON.stringify(selectedProduct));
+            try {
+                const res = await fetch('/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    orderItems: orderData.items,
+                    subtotal: orderData.subtotal
+                })
+                });
 
-            // Show the chosen add-ons section
-            const addonsSection = document.getElementById(`addons-section-${productId}`);
-            if (addonsSection) {
-                addonsSection.classList.add('show');
-            } else {
-                console.warn(`Addons section not found for product ID: ${productId}`);
+                const data = await res.json();
+                if (data.success) {
+                    alert(`Order placed successfully! Order ID: ${data.order_id}`);
+                    clearOrder(); // reset local storage and UI
+                } else {
+                    alert("Checkout failed: " + data.message);
+                }
+            } catch (err) {
+                console.error('Checkout error:', err);
+                alert("An error occurred while checking out.");
             }
         }
 
-        function addProductWithAddons(productId) {
-            // Retrieve the selected product details
-            const selectedProduct = JSON.parse(localStorage.getItem('selectedProduct'));
 
-            // Add the product to the order
+        function showAddons(productId, productName, productPrice) {
+             const addonsSection = document.getElementById(`addons-section-${productId}`);
+              const isCurrentlyVisible = addonsSection.classList.contains('show');
+               // Hide all other add-on sections
+               document.querySelectorAll('.addons-container').forEach(section => {
+                 if (section !== addonsSection) {
+                     section.classList.remove('show');
+                     }
+                 });
+                 
+                 if (!isCurrentlyVisible) {
+                     addonsSection.classList.add('show');
+                     // Save selected product (only when expanding)
+                     const selectedProduct = { id: productId, name: productName, price: productPrice };
+                     localStorage.setItem('selectedProduct', JSON.stringify(selectedProduct));
+                } else {
+                    // Collapse this section
+                    addonsSection.classList.remove('show');
+                    localStorage.removeItem('selectedProduct');
+                    // Clear all selected checkboxes in this section
+                    addonsSection.querySelectorAll('.addon-checkbox').forEach(cb => cb.checked = false);
+                }
+        }
+
+        function addProductWithAddons(productId) {
+           const selectedProduct = JSON.parse(localStorage.getItem('selectedProduct'));
+            if (!selectedProduct) return;
+
+            // Add main product
             addToOrder(selectedProduct.id, selectedProduct.name, selectedProduct.price);
 
-            // Add selected add-ons to the order
-            const selectedAddons = document.querySelectorAll('.addon-checkbox:checked');
-            selectedAddons.forEach(addonCheckbox => {
-                const addonId = addonCheckbox.dataset.id;
-                const addonName = addonCheckbox.dataset.name;
-                const addonPrice = parseFloat(addonCheckbox.dataset.price);
+            // Add selected add-ons
+            const addonsSection = document.getElementById(`addons-section-${productId}`);
+            const selectedAddons = addonsSection.querySelectorAll('.addon-checkbox:checked');
+            selectedAddons.forEach(cb => {
+                const addonId = cb.dataset.id;
+                const addonName = cb.dataset.name;
+                const addonPrice = parseFloat(cb.dataset.price);
                 addToOrder(addonId, addonName, addonPrice, true);
+                cb.checked = false; // clear checkbox
             });
 
-            // Hide the add-ons section
-            const addonsSection = document.getElementById(`addons-section-${productId}`);
-            addonsSection.style.display = 'none';
-
-            // Clear the selected product
-            localStorage.removeItem('selectedProduct');
+            showAddons(productId); // Collapse the add-ons section after adding to order
+            
         }
 
         // Load order data on page load
@@ -163,11 +197,11 @@
                     <div class="products">
                         <h2><%= selectedGroup.category %></h2>
                         <ul>
-                            <% selectedGroup.products.forEach((product, index) => { %>
+                            <% selectedGroup.products.forEach((product) => { %>
                                 <li>
                                     <strong><%= product.name %></strong> - $<%= product.price %>
-                                    <button onclick="showAddons('<%= index %>', '<%= product.name %>', <%= product.price %>)">Select Add-ons</button>
-                                    <div id="addons-section-<%= index %>" class="addons-container">  
+                                    <button onclick="showAddons('<%= product.id %>', '<%= product.name %>', <%= product.price %>)">Select Add-ons</button>
+                                    <div id="addons-section-<%= product.id %>" class="addons-container">  
                                         <h2>Select Add-ons</h2>
                                         <ul>
                                             <% addons.forEach(addon => { %>
@@ -178,7 +212,7 @@
                                                 </li>
                                                 
                                             <% }); %>
-                                            <button onclick="addProductWithAddons('<%= index %>')">Add to Order</button> 
+                                            <button onclick="addProductWithAddons('<%= product.id %>')">Add to Order</button> 
                                         </ul>
                                         
                                     </div>
@@ -201,9 +235,8 @@
             <p>Subtotal: $<span id="subtotal">0.00</span></p>
             <p>Tax (8.25%): $<span id="tax">0.00</span></p>
             <p>Total: $<span id="total">0.00</span></p>
-            <button class="checkout"onclick="clearOrder()">Checkout</button>
+            <button class="checkout"onclick="checkoutOrder()">Checkout</button>
         </div>
-        
         <button class="clear-order" onclick="clearOrder()">Clear Order</button>
         <button class="cancel-order" onclick="clearOrder(); window.location.href='/'">Cancel Order</button>
     </div>

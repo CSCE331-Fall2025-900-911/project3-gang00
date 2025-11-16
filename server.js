@@ -166,6 +166,22 @@ app.get('/employee', (req, res) => {
     res.render('employee', { user: req.user });
 });
 
+// Check manager credentials
+app.get('/manager/check-credentials', (req, res) => {
+  if (!req.isAuthenticated()) {
+    // User not logged in at all
+    return res.json({success: false, message: "You are not signed in!"});
+  }
+  if (req.user.employee_id === undefined) {
+    // logged in but not as an employee
+    return res.json({success: false, message: "You are not signed in as an employee!"});
+  }
+  if (req.user.role !== 'Manager') {
+    return res.json({success: false, message: "Your account does not have manager permissions!"});
+  }
+  res.json({success: true});
+})
+
 // Manager portal (guarded)
 app.get('/manager', (req, res) => {
   if (!req.isAuthenticated()) {
@@ -176,7 +192,7 @@ app.get('/manager', (req, res) => {
     // logged in but not as an employee
     return res.redirect('/');
   }
-  if (req.user.employee_role !== 'Manager') {
+  if (req.user.role !== 'Manager') {
     return res.json({success: false, message: "Your account does not have manager permissions!"});
   }
   res.render('manager', { user: req.user });
@@ -422,6 +438,7 @@ app.get('/order', async (req, res) => {
 
     const productsQuery = `
       SELECT 
+        products.product_id AS id,
         products.product_name AS name, 
         products.product_price AS price, 
         products.category_id, 
@@ -460,6 +477,91 @@ app.get('/order', async (req, res) => {
   } catch (err) {
     console.error('DB error:', err);
     res.status(500).send('Database query failed');
+  }
+});
+
+// -------- Checkout Route --------
+app.post('/checkout', async (req, res) => {
+  const { orderItems, subtotal } = req.body;
+
+  // Validate input
+  if (!Array.isArray(orderItems) || orderItems.length === 0) {
+    return res.status(400).json({ success: false, message: 'No items in order.' });
+  }
+
+  const subtotalNum = parseFloat(subtotal);
+  if (isNaN(subtotalNum)) {
+    return res.status(400).json({ success: false, message: 'Invalid subtotal.' });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // TEMP: hardcode employee_id until auth integration
+    const employee_id = 12;
+
+    // Fetch Water ingredient_id (assume infinite)
+    const waterRes = await client.query(`SELECT ingredient_id FROM ingredients WHERE ingredient_name = 'Water'`);
+    const water_id = waterRes.rows.length ? waterRes.rows[0].ingredient_id : null;
+
+    // Create order
+    const orderRes = await client.query(
+      `INSERT INTO orders (employee_id, sub_total)
+       VALUES ($1, $2)
+       RETURNING order_id;`,
+      [employee_id, subtotalNum]
+    );
+    const order_id = orderRes.rows[0].order_id;
+
+    // Loop through each item (products + add-ons)
+    for (const item of orderItems) {
+      const { productId, productPrice, item_count = 1, isAddon = false } = item;
+
+      if (isAddon) {
+        continue;
+      }
+
+      if (!productId || isNaN(productPrice)) {
+        throw new Error(`Invalid item: ${JSON.stringify(item)}`);
+      }
+
+      // Reduce ingredient quantities for this product (except Water)
+      const ingRes = await client.query(
+        `SELECT ingredient_id, ingredient_amount
+         FROM productingredients
+         WHERE product_id = $1;`,
+        [productId]
+      );
+
+      for (const ing of ingRes.rows) {
+        if (water_id && ing.ingredient_id === water_id) continue;
+        const totalUsed = ing.ingredient_amount * item_count;
+
+        await client.query(
+          `UPDATE ingredients
+           SET quantity = quantity - $1
+           WHERE ingredient_id = $2;`,
+          [totalUsed, ing.ingredient_id]
+        );
+      }
+
+      // Insert item into orderitems
+      await client.query(
+        `INSERT INTO orderitems (order_id, product_id, qty, item_price)
+         VALUES ($1, $2, $3, $4);`,
+        [order_id, productId, item_count, productPrice]
+      );
+    }
+
+    await client.query('COMMIT');
+    res.json({ success: true, order_id });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Checkout error:', err);
+    res.status(500).json({ success: false, message: 'Checkout failed.' });
+  } finally {
+    client.release();
   }
 });
 
@@ -591,6 +693,48 @@ app.get('/api/kiosk-info', async (req, res) => {
   } catch (e) {
     console.error(e);
     res.status(500).json({ ok: false, error: 'weather fetch failed' });
+  }
+});
+
+
+// ---- Manager Routes ----
+app.get('/manager/inventory', async (req, res) => {
+  if (req.isAuthenticated() && req.user.role === 'Manager') {
+    // go ahead and get inventory data from db
+    try {
+      const { rows } = await pool.query('SELECT ingredient_id, ingredient_name, quantity, ingredient_unit FROM ingredients ORDER BY ingredient_id;');
+      return res.render('manager/inventory', { user: req.user, data: rows });
+    } catch (err) {
+      console.error('DB error:', err);
+      res.status(500).send('Database query failed');
+    }
+  }
+  res.redirect('/manager');
+});
+
+app.post('/manager/inventory/update', async (req, res) => {
+  try {
+    await pool.query('UPDATE ingredients SET ingredient_name = $1, quantity = $2, ingredient_unit = $3 WHERE ingredient_id = $4;', 
+      [req.body.name, req.body.quantity, req.body.unit, req.body.id]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error('DB error:', err);
+    res.json({ success: false, message: "Database query failed"});
+  }
+});
+
+app.post('/manager/inventory/add', async (req, res) => {
+  try {
+    const fullAmount = req.body.quantity;
+    const restockAmount = Math.floor(req.body.quantity / 3);
+    await pool.query('INSERT INTO ingredients (ingredient_name, quantity, minimum_quantity, full_quantity, ingredient_unit) VALUES ($1, $2, $3, $4, $5);', 
+      [req.body.name, req.body.quantity, fullAmount, restockAmount, req.body.unit]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error('DB error:', err);
+    res.json({ success: false, message: "Database query failed"});
   }
 });
 

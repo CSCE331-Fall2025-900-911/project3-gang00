@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <head>
-    <title>ShareTea Employee</title>
+    <title>ShareTea Manager</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -8,15 +8,15 @@
 </head>
 <body>
     <nav class="navbar" style="padding: 10px 10px;">
-        <div class="logo">
-            <a href="javascript:void(0)">
+        <div>
+            <!-- <a href="javascript:void(0)">
                 <img src="/ShareTea_logo.webp" alt="ShareTea Logo" class="logo-img">
             </a>
-            <h1 style="font-size: 50px; font-weight: 500; margin-top: 10px;">Employees</h1>
-            
+            <h1 style="font-size: 50px; font-weight: 500; margin-top: 10px;">Managers</h1> -->
+            <h1 style="font-size: 50px; font-weight: 600; margin-left: 20px;">Managers</h1>
         </div>
         <ul class="nav-links">
-            <li><a href="javacript:void(0)" onclick="goToManager()" style="display: flex; align-items: center; gap: 8px;"><img src="/accountant.png" style="height: 40px;">Managers</a></li>
+            <li><a href="/employee" style="display: flex; align-items: center; gap: 8px;"><img src="/img/management/employee.png" style="height: 40px;">Employees</a></li>
             
             <!-- Account Dropdown -->
             <li style="position: relative;">
@@ -71,11 +71,59 @@
         </div>
     </div>
 
-    <!-- Main body of page -->
-    <h1>Employee Page</h1>
-    <h2>Welcome, <%= user.employee_name %>!</h2>
+    <section style="overflow-y: auto;">
+        <!-- Main body of page -->
+        <div class="grid">
+            <div class="card" onclick="goToInventory()">
+                <img src="/img/management/inventory-management.png">
+                <h3>Inventory</h3>
+                <p>View Inventory levels, update ingredient quantity, and add new items.</p>
+            </div>
+            <div class="card">
+                <img src="/img/management/stock-rotation.png">
+                <h3>Restock</h3>
+                <p>Easily refill ingredients that are below the retock threshold.</p>
+            </div>  
+            <div class="card">
+                <img src="/img/management/menu.png">
+                <h3>Menu</h3>
+                <p>View and update menu items.</p>
+            </div>
+            <div class="card">
+                <img src="/img/management/employee.png">
+                <h3>Employees</h3>
+                <p>Add/view employees as well as update permissions.</p>
+            </div>
+            <div class="card">
+                <img src="/img/management/growth.png">
+                <h3>Sales Report</h3>
+                <p>View a sales breakdown given a valid date range.</p>
+            </div>
+            <div class="card">
+                <img src="/img/management/delete.png">
+                <h3>X-Report</h3>
+                <p>View the X-Report for the current day.</p>
+            </div>
+            <div class="card">
+                <img src="/img/management/letter-z.png">
+                <h3>Z-Report</h3>
+                <p>View the Z-Report for the current day. This should only be done once at the end of the day.</p>
+            </div>
+            <div class="card">
+                <img src="/img/management/business-report.png">
+                <h3>Reports</h3>
+                <p>View all other reports about sales history, menu items, ect.</p>
+            </div>
+            <div class="card">
+                <img src="/img/management/mail.png">
+                <h3>Inbox</h3>
+                <p>View inbox for any unread messages left by customers.</p>
+            </div>
+        </div>
+        <div style="height: 50px;"></div>
+    </section>
     
     <script type="module" src="/langSelect.js"></script>
     <script src="/index.js"></script>
-    <script src="/employee.js"></script>
-</body>
+    <script src="/manager.js"></script>
+</body> 
