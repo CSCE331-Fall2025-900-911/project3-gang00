@@ -203,6 +203,11 @@ app.get('/help', (req, res) => {
   res.render('help', { faqs: faqs, site: site, user: null });
 });
 
+// Post to help
+app.post('/get-Feedback', (req,res)=>{
+
+});
+
 // Employee sign in attempt (passport)
 app.post('/employee-sign-in/attempt', (req, res) => {
   passport.authenticate('employee-local', (err, user, info) => {
