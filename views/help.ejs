@@ -40,6 +40,10 @@
         <h2>Contact Us</h2>
         <div class="contactUs">
 
+            <% if (typeof submitted !== 'undefined' && submitted) { %>
+                <div class="flash success">Message sent. We'll get back to you soon.</div>
+            <% } %>
+
             <div><strong>Email:</strong> <a href="mailto:<%= site.supportEmail %>"><%= site.supportEmail %></a></div>
             <div><strong>Phone:</strong> <a href="tel:+15551234567"><%= site.supportPhone %></a></div>
             <div><strong>Support Hours:</strong> <%= site.supportHours %></div>
@@ -48,6 +52,7 @@
 
             <form action="/contact" method="POST" class="contactGrid">
 
+            <!-- Get the user input here and return to the database -->
             <input type="text" name="name" placeholder="Your name" required />
             <input type="email" name="email" placeholder="Your email" required />
             <textarea name="message" placeholder="How can we help?" rows="4" required></textarea>
@@ -55,6 +60,7 @@
 
             </form>
         </div>
+          
         </section>
 
     </main>

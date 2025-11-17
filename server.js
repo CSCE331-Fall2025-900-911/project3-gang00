@@ -22,7 +22,7 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: true }));
 
 // -------- Database --------
 const pool = new Pool({
@@ -212,11 +212,43 @@ app.get('/help', (req, res) => {
     { q: 'Can I customize my drink?', a: 'Yes—choose sweetness, ice, and toppings.' },
     { q: 'Are allergen details available?', a: 'Allergen info is listed on each product page.' },
   ];
+
+  const submitted = req.query.submitted === '1';
   
   if (req.isAuthenticated() && req.user.customer_id !== undefined) {
     return res.render('help', { faqs: faqs, site: site, user: req.user });
   }
-  res.render('help', { faqs: faqs, site: site, user: null });
+  res.render('help', { faqs: faqs, site: site, user: null, submitted });
+});
+
+// Post to help
+app.post('/contact', async (req,res)=>{
+  try {
+    let { name, email, message } = req.body;
+    name = (name || '').trim();
+    email = (email || '').trim();
+    message = (message || '').trim();
+
+    if (!name || !email || !message) 
+      return res.status(400).send('Missing required fields');
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) 
+      return res.status(400).send('Invalid email');
+    
+    if (message.length > 5000) 
+      return res.status(400).send('Message too long');
+
+    await pool.query(
+      `INSERT INTO contact_messages (name, email, message) VALUES ($1, $2, $3)`,
+      [name, email, message]
+    );
+
+    // back to /help
+    res.redirect('/help?submitted=1');
+  } catch (err) {
+    console.error('contact insert error:', err);
+    res.status(500).send('Server error');
+  }
 });
 
 // Employee sign in attempt (passport)
