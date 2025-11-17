@@ -724,8 +724,32 @@ app.post('/manager/inventory/add', async (req, res) => {
     const fullAmount = req.body.quantity;
     const restockAmount = Math.floor(req.body.quantity / 3);
     await pool.query('INSERT INTO ingredients (ingredient_name, quantity, minimum_quantity, full_quantity, ingredient_unit) VALUES ($1, $2, $3, $4, $5);', 
-      [req.body.name, req.body.quantity, fullAmount, restockAmount, req.body.unit]
+      [req.body.name, req.body.quantity, restockAmount, fullAmount, req.body.unit]
     );
+    res.json({ success: true });
+  } catch (err) {
+    console.error('DB error:', err);
+    res.json({ success: false, message: "Database query failed"});
+  }
+});
+
+app.get('/manager/restock', async (req, res) => {
+  if (req.isAuthenticated() && req.user.role === 'Manager') {
+    // go ahead and get inventory data from db
+    try {
+      const { rows } = await pool.query('SELECT * FROM ingredients WHERE (quantity <= minimum_quantity) AND (full_quantity > 0) ORDER BY ingredient_id;');
+      return res.render('manager/restock', { user: req.user, data: rows });
+    } catch (err) {
+      console.error('DB error:', err);
+      res.status(500).send('Database query failed');
+    }
+  }
+  res.redirect('/manager');
+});
+
+app.post('/manager/restock/update', async (req, res) => {
+  try {
+    await pool.query('UPDATE ingredients SET quantity = full_quantity WHERE (quantity <= minimum_quantity) AND (full_quantity > 0);');
     res.json({ success: true });
   } catch (err) {
     console.error('DB error:', err);
