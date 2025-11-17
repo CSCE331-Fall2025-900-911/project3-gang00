@@ -523,6 +523,15 @@ input:focus{
     padding: 20px;
 }
 
+.flash.success {
+  background: #e7f7ec;
+  border: 1px solid #b7e2c3;
+  color: #1a6b3b;
+  padding: 10px 12px;
+  border-radius: 6px;
+  margin: 8px 0 16px;
+}
+
 .contactGrid input,
 .contactGrid textarea {
     width: 100%;          

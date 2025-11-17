@@ -40,6 +40,10 @@
         <h2>Contact Us</h2>
         <div class="contactUs">
 
+            <% if (typeof submitted !== 'undefined' && submitted) { %>
+                <div class="flash success">Message sent. We'll get back to you soon.</div>
+            <% } %>
+
             <div><strong>Email:</strong> <a href="mailto:<%= site.supportEmail %>"><%= site.supportEmail %></a></div>
             <div><strong>Phone:</strong> <a href="tel:+15551234567"><%= site.supportPhone %></a></div>
             <div><strong>Support Hours:</strong> <%= site.supportHours %></div>
@@ -56,6 +60,7 @@
 
             </form>
         </div>
+          
         </section>
 
     </main>
