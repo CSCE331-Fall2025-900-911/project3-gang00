@@ -36,6 +36,8 @@
             orderData.items.push({ productId, productName, productPrice, isAddon });
             orderData.subtotal = newSubtotal;
             localStorage.setItem('orderData', JSON.stringify(orderData));
+
+            
         }
 
         function loadOrder() {
@@ -85,27 +87,62 @@
                 return;
             }
 
-            try {
-                const res = await fetch('/checkout', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    orderItems: orderData.items,
-                    subtotal: orderData.subtotal
-                })
-                });
+            // Populate modal with order items
+            const confirmList = document.getElementById("confirm-order-list");
+            confirmList.innerHTML = "";
 
-                const data = await res.json();
-                if (data.success) {
-                    alert(`Order placed successfully! Order ID: ${data.order_id}`);
-                    clearOrder(); // reset local storage and UI
-                } else {
-                    alert("Checkout failed: " + data.message);
+            orderData.items.forEach(item => {
+                const li = document.createElement("li");
+                li.textContent = `${item.productName} - $${item.productPrice.toFixed(2)}`;
+                if (item.isAddon) {
+                    li.style.marginLeft = "20px";
+                    li.style.fontSize = "0.9em";
                 }
-            } catch (err) {
-                console.error('Checkout error:', err);
-                alert("An error occurred while checking out.");
-            }
+                confirmList.appendChild(li);
+            });
+
+            // Fill totals
+            const tax = orderData.subtotal * 0.0825;
+            const total = orderData.subtotal + tax;
+
+            document.getElementById("confirm-subtotal").textContent = orderData.subtotal.toFixed(2);
+            document.getElementById("confirm-tax").textContent = tax.toFixed(2);
+            document.getElementById("confirm-total").textContent = total.toFixed(2);
+
+            // Show modal
+            document.getElementById("confirmModal").classList.remove("hidden");
+
+            // Confirm button
+            document.getElementById("confirmYes").onclick = async () => {
+                try {
+                    const res = await fetch('/checkout', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            orderItems: orderData.items,
+                            subtotal: orderData.subtotal
+                        })
+                    });
+
+                    const data = await res.json();
+                    if (data.success) {
+                        alert(`Order placed successfully! Order ID: ${data.order_id}`);
+                        clearOrder();
+                        document.getElementById("confirmModal").classList.add("hidden");
+                        window.location.href = "/";
+                    } else {
+                        alert("Checkout failed: " + data.message);
+                    }
+                } catch (err) {
+                    console.error('Checkout error:', err);
+                    alert("An error occurred while checking out.");
+                }
+            };
+
+            // Cancel button closes modal
+            document.getElementById("confirmNo").onclick = () => {
+                document.getElementById("confirmModal").classList.add("hidden");
+            };
         }
 
 
@@ -133,12 +170,16 @@
                 }
         }
 
+
         function addProductWithAddons(productId) {
            const selectedProduct = JSON.parse(localStorage.getItem('selectedProduct'));
-            if (!selectedProduct) return;
+            if (selectedProduct) {
+                addToOrder(selectedProduct.id, selectedProduct.name, selectedProduct.price);
+            }
+            if (!selectedProduct) {
+                addToOrder(productId, productName, productPrice);
+            }
 
-            // Add main product
-            addToOrder(selectedProduct.id, selectedProduct.name, selectedProduct.price);
 
             // Add selected add-ons
             const addonsSection = document.getElementById(`addons-section-${productId}`);
@@ -154,6 +195,18 @@
             showAddons(productId); // Collapse the add-ons section after adding to order
             
         }
+
+        function handleAddToOrder(productId, productName, productPrice) {
+            const addonsSection = document.getElementById(`addons-section-${productId}`);
+
+            // If addons are showing, call addProductWithAddons
+            if (addonsSection.classList.contains('show')) {
+                addProductWithAddons(productId, productName, productPrice);
+            } else {
+                addToOrder(productId, productName, productPrice);
+            }
+        }
+
 
         // Load order data on page load
         window.onload = loadOrder;
@@ -201,6 +254,7 @@
                                 <li>
                                     <strong><%= product.name %></strong> - $<%= product.price %>
                                     <button onclick="showAddons('<%= product.id %>', '<%= product.name %>', <%= product.price %>)">Select Add-ons</button>
+                                    <button onclick="handleAddToOrder('<%= product.id %>', '<%= product.name %>', <%= product.price %>)">Add to Order</button>
                                     <div id="addons-section-<%= product.id %>" class="addons-container">  
                                         <h2>Select Add-ons</h2>
                                         <ul>
@@ -212,10 +266,10 @@
                                                 </li>
                                                 
                                             <% }); %>
-                                            <button onclick="addProductWithAddons('<%= product.id %>')">Add to Order</button> 
                                         </ul>
-                                        
+                                        <button onclick="addProductWithAddons('<%= product.id %>')">Add to Order</button>
                                     </div>
+                                    
                                 </li>
                             <% }); %>
                         </ul>
@@ -243,5 +297,19 @@
 
     <script type="module" src="/langSelect.js"></script>
     <script src="/index.js"></script>
+
+    <div id="confirmModal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Confirm Your Order</h2>
+            <ul id="confirm-order-list"></ul>
+            <p>Subtotal: $<span id="confirm-subtotal">0.00</span></p>
+            <p>Tax: $<span id="confirm-tax">0.00</span></p>
+            <p>Total: $<span id="confirm-total">0.00</span></p>
+            <div class="modal-buttons">
+                <button id="confirmYes">Confirm</button>
+                <button id="confirmNo">Cancel</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
