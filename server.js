@@ -208,9 +208,11 @@ app.get('/help', (req, res) => {
   };
   const faqs = [
     { q: 'How do I place an order?', a: 'Go to the Order page, pick items, customize, and checkout.' },
-    { q: 'Do you offer delivery?', a: 'Yes, depending on your location.' },
+    { q: 'Do you offer delivery?', a: 'No, we do not offer delivery.' },
     { q: 'Can I customize my drink?', a: 'Yes—choose sweetness, ice, and toppings.' },
-    { q: 'Are allergen details available?', a: 'Allergen info is listed on each product page.' },
+    { q: 'Do you need an account to order?', a: 'No, you can order as a guest.' },
+    { q: 'Do you get points per order?', a: 'Yes, but only if you have an account.' },
+    { q: 'How do I sign in without google?', a: 'You need to link a password to your account first.' }
   ];
 
   const submitted = req.query.submitted === '1';
@@ -391,7 +393,7 @@ app.get('/profile', (req, res) => {
   res.redirect('/');
 })
 
-// Contact
+// Contact page
 app.get('/contact', (req, res) => {
   const site = {
     brand: 'Sharetea',
