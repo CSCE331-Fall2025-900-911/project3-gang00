@@ -523,6 +523,15 @@ input:focus{
     padding: 20px;
 }
 
+.flash.success {
+  background: #e7f7ec;
+  border: 1px solid #b7e2c3;
+  color: #1a6b3b;
+  padding: 10px 12px;
+  border-radius: 6px;
+  margin: 8px 0 16px;
+}
+
 .contactGrid input,
 .contactGrid textarea {
     width: 100%;          
@@ -632,7 +641,7 @@ input:focus{
 
 .weather-reco__text { }
 
-.modal {
+.modal-order {
     position: fixed;
     top: 0;
     left: 0;
@@ -663,4 +672,150 @@ input:focus{
     margin-top: 15px;
     display: flex;
     justify-content: space-around;
+}
+
+/* Manager Page */
+.grid { 
+  display:grid; 
+  grid-template-columns: repeat(auto-fit, minmax(300px,1fr)); 
+  gap:30px; 
+  margin-left: 100px;
+  margin-right: 100px;
+  margin-top: 50px;
+}
+.card {
+  background:white;
+  border-radius:12px;
+  padding:20px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.4);
+  transition:transform .2s;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  text-align:center;
+  height: 270px;
+  cursor: pointer;
+}
+.card:hover { transform:translateY(-6px); }
+.card img {
+  width:90px;
+  height:90px;
+  margin-bottom:12px;
+}
+.card h3 { margin:0 0 10px; font-size:1.1rem; color:black; }
+.card p { margin:0; color:#9aa7b3; font-size:0.95rem; }
+
+/* Inventory */
+.left, .right {
+  flex: 1; /* each half gets 50% width */
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.inventoryTableContainer {
+  height: 550px;        
+  overflow-y: auto;     /* enables vertical scrolling */
+  /* border: 2px solid #ccc; */
+  border-radius: 4px;
+  width: 600px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.4);
+  align-self: center;
+}
+
+.myTable { 
+  width: 100%;
+  border-collapse: collapse;
+  /* margin: 20px auto; */
+}
+
+.myTable th, td {
+  border: 1.5px solid #999;
+  padding: 10px;
+  text-align: left;
+}
+
+.myTable th {
+  background-color: #ff6d6d;
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.myTable tr {
+  background-color: #f2f2f2;
+}
+
+.myTable td {
+  cursor: pointer;
+}
+
+.myTable tr:hover {
+  background-color: #ddd; /* highlight on hover */
+}
+
+.myTable tr.selected {
+  background: #ffdddd;
+}
+
+.back-arrow {
+  width: 40px;
+  height: 40px;
+  margin: 10px;
+  transition: 0.2s ease;
+}
+
+.back-arrow:hover {
+  transform: scale(1.15);  /* grow slightly */
+  cursor: pointer;         
+  opacity: 0.8;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+  justify-content: center;
+  align-items: center;
+  z-index: 200;
+}
+
+
+input[type="name"],
+input[type="quantity"],
+input[type="unit"]{
+  width:100%;
+  padding:12px 14px;
+  border-radius:10px;
+  border:1px solid rgba(15,23,42,0.08);
+  background:#fff;
+  font-size:14px;
+  outline:none;
+  transition:box-shadow .12s, border-color .12s;
+  margin-top: -10px;
+}
+
+#update-ingredient-form label {
+  display: block;     /* forces label to take full width */
+  text-align: left;   /* aligns text to the left */
+  margin-bottom: 4px; /* small spacing above inputs */
+}
+
+#add-ingredient-form label {
+  display: block;     /* forces label to take full width */
+  text-align: left;   /* aligns text to the left */
+  margin-bottom: 4px; /* small spacing above inputs */
+}
+
+.tableContainer {
+  /* border: 2px solid #ccc; */
+  border-radius: 4px;
+  width: 70%;
+  box-shadow:0 4px 12px rgba(0,0,0,0.4);
+  align-self: center;
 }

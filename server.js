@@ -22,7 +22,7 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: true }));
 
 // -------- Database --------
 const pool = new Pool({
@@ -166,6 +166,22 @@ app.get('/employee', (req, res) => {
     res.render('employee', { user: req.user });
 });
 
+// Check manager credentials
+app.get('/manager/check-credentials', (req, res) => {
+  if (!req.isAuthenticated()) {
+    // User not logged in at all
+    return res.json({success: false, message: "You are not signed in!"});
+  }
+  if (req.user.employee_id === undefined) {
+    // logged in but not as an employee
+    return res.json({success: false, message: "You are not signed in as an employee!"});
+  }
+  if (req.user.role !== 'Manager') {
+    return res.json({success: false, message: "Your account does not have manager permissions!"});
+  }
+  res.json({success: true});
+})
+
 // Manager portal (guarded)
 app.get('/manager', (req, res) => {
   if (!req.isAuthenticated()) {
@@ -176,7 +192,7 @@ app.get('/manager', (req, res) => {
     // logged in but not as an employee
     return res.redirect('/');
   }
-  if (req.user.employee_role !== 'Manager') {
+  if (req.user.role !== 'Manager') {
     return res.json({success: false, message: "Your account does not have manager permissions!"});
   }
   res.render('manager', { user: req.user });
@@ -192,15 +208,49 @@ app.get('/help', (req, res) => {
   };
   const faqs = [
     { q: 'How do I place an order?', a: 'Go to the Order page, pick items, customize, and checkout.' },
-    { q: 'Do you offer delivery?', a: 'Yes, depending on your location.' },
+    { q: 'Do you offer delivery?', a: 'No, we do not offer delivery.' },
     { q: 'Can I customize my drink?', a: 'Yes—choose sweetness, ice, and toppings.' },
-    { q: 'Are allergen details available?', a: 'Allergen info is listed on each product page.' },
+    { q: 'Do you need an account to order?', a: 'No, you can order as a guest.' },
+    { q: 'Do you get points per order?', a: 'Yes, but only if you have an account.' },
+    { q: 'How do I sign in without google?', a: 'You need to link a password to your account first.' }
   ];
+
+  const submitted = req.query.submitted === '1';
   
   if (req.isAuthenticated() && req.user.customer_id !== undefined) {
     return res.render('help', { faqs: faqs, site: site, user: req.user });
   }
-  res.render('help', { faqs: faqs, site: site, user: null });
+  res.render('help', { faqs: faqs, site: site, user: null, submitted });
+});
+
+// Post to help
+app.post('/contact', async (req,res)=>{
+  try {
+    let { name, email, message } = req.body;
+    name = (name || '').trim();
+    email = (email || '').trim();
+    message = (message || '').trim();
+
+    if (!name || !email || !message) 
+      return res.status(400).send('Missing required fields');
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) 
+      return res.status(400).send('Invalid email');
+    
+    if (message.length > 5000) 
+      return res.status(400).send('Message too long');
+
+    await pool.query(
+      `INSERT INTO contact_messages (name, email, message) VALUES ($1, $2, $3)`,
+      [name, email, message]
+    );
+
+    // back to /help
+    res.redirect('/help?submitted=1');
+  } catch (err) {
+    console.error('contact insert error:', err);
+    res.status(500).send('Server error');
+  }
 });
 
 // Employee sign in attempt (passport)
@@ -343,7 +393,7 @@ app.get('/profile', (req, res) => {
   res.redirect('/');
 })
 
-// Contact
+// Contact page
 app.get('/contact', (req, res) => {
   const site = {
     brand: 'Sharetea',
@@ -672,6 +722,72 @@ app.get('/api/kiosk-info', async (req, res) => {
   } catch (e) {
     console.error(e);
     res.status(500).json({ ok: false, error: 'weather fetch failed' });
+  }
+});
+
+
+// ---- Manager Routes ----
+app.get('/manager/inventory', async (req, res) => {
+  if (req.isAuthenticated() && req.user.role === 'Manager') {
+    // go ahead and get inventory data from db
+    try {
+      const { rows } = await pool.query('SELECT ingredient_id, ingredient_name, quantity, ingredient_unit FROM ingredients ORDER BY ingredient_id;');
+      return res.render('manager/inventory', { user: req.user, data: rows });
+    } catch (err) {
+      console.error('DB error:', err);
+      res.status(500).send('Database query failed');
+    }
+  }
+  res.redirect('/manager');
+});
+
+app.post('/manager/inventory/update', async (req, res) => {
+  try {
+    await pool.query('UPDATE ingredients SET ingredient_name = $1, quantity = $2, ingredient_unit = $3 WHERE ingredient_id = $4;', 
+      [req.body.name, req.body.quantity, req.body.unit, req.body.id]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error('DB error:', err);
+    res.json({ success: false, message: "Database query failed"});
+  }
+});
+
+app.post('/manager/inventory/add', async (req, res) => {
+  try {
+    const fullAmount = req.body.quantity;
+    const restockAmount = Math.floor(req.body.quantity / 3);
+    await pool.query('INSERT INTO ingredients (ingredient_name, quantity, minimum_quantity, full_quantity, ingredient_unit) VALUES ($1, $2, $3, $4, $5);', 
+      [req.body.name, req.body.quantity, restockAmount, fullAmount, req.body.unit]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error('DB error:', err);
+    res.json({ success: false, message: "Database query failed"});
+  }
+});
+
+app.get('/manager/restock', async (req, res) => {
+  if (req.isAuthenticated() && req.user.role === 'Manager') {
+    // go ahead and get inventory data from db
+    try {
+      const { rows } = await pool.query('SELECT * FROM ingredients WHERE (quantity <= minimum_quantity) AND (full_quantity > 0) ORDER BY ingredient_id;');
+      return res.render('manager/restock', { user: req.user, data: rows });
+    } catch (err) {
+      console.error('DB error:', err);
+      res.status(500).send('Database query failed');
+    }
+  }
+  res.redirect('/manager');
+});
+
+app.post('/manager/restock/update', async (req, res) => {
+  try {
+    await pool.query('UPDATE ingredients SET quantity = full_quantity WHERE (quantity <= minimum_quantity) AND (full_quantity > 0);');
+    res.json({ success: true });
+  } catch (err) {
+    console.error('DB error:', err);
+    res.json({ success: false, message: "Database query failed"});
   }
 });
 
