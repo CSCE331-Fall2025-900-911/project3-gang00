@@ -654,11 +654,11 @@ input:focus{
     z-index: 999;
 }
 
-.modal.hidden {
+.modal-order.hidden {
     display: none;
 }
 
-.modal-content {
+.modal-order-content {
     background: white;
     padding: 20px;
     border-radius: 12px;
@@ -668,7 +668,7 @@ input:focus{
     text-align: center;
 }
 
-.modal-buttons {
+.modal-order-buttons {
     margin-top: 15px;
     display: flex;
     justify-content: space-around;
