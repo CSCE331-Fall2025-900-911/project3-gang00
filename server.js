@@ -741,6 +741,20 @@ app.get('/manager/inventory', async (req, res) => {
   res.redirect('/manager');
 });
 
+app.get('/manager/inbox', async (req, res) => {
+    if (req.isAuthenticated() && req.user.role === 'Manager') {
+    // go ahead and get inbox
+    try {
+      const { rows } = await pool.query('SELECT name, email, message from contact_messages;');
+      return res.render('manager/inbox', { user: req.user, data: rows });
+    } catch (err) {
+      console.error('DB error:', err);
+      res.status(500).send('Database query failed');
+    }
+  }
+  res.redirect('/manager');
+});
+
 app.post('/manager/inventory/update', async (req, res) => {
   try {
     await pool.query('UPDATE ingredients SET ingredient_name = $1, quantity = $2, ingredient_unit = $3 WHERE ingredient_id = $4;', 
