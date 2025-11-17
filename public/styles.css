@@ -682,7 +682,7 @@ input:focus{
   justify-content: center;
 }
 
-.tableContainer {
+.inventoryTableContainer {
   height: 550px;        
   overflow-y: auto;     /* enables vertical scrolling */
   /* border: 2px solid #ccc; */
@@ -778,4 +778,12 @@ input[type="unit"]{
   display: block;     /* forces label to take full width */
   text-align: left;   /* aligns text to the left */
   margin-bottom: 4px; /* small spacing above inputs */
+}
+
+.tableContainer {
+  /* border: 2px solid #ccc; */
+  border-radius: 4px;
+  width: 70%;
+  box-shadow:0 4px 12px rgba(0,0,0,0.4);
+  align-self: center;
 }
