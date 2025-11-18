@@ -9,6 +9,8 @@ function goToXreport(){
 
 function goToZreport(){
     window.location.href = "/manager/zreport";
+}
+
 function goToRestock() {
     window.location.href = "/manager/restock";
 }

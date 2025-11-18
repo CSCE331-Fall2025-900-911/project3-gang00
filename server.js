@@ -806,6 +806,15 @@ app.get('/manager/xreport', async (req, res) => {
       const categoriesRes = await pool.query(categoriesSql);
 
       return res.render('manager/xreport', { user: req.user, summary: summaryRes.rows[0], products: productsRes.rows, perHour: perHourRes.rows, categories: categoriesRes.rows });
+    }
+    catch (err) {
+      console.error('DB error:', err);
+      res.status(500).send('Database query failed');
+    }
+  }
+  res.redirect('/manager');
+});
+
 app.get('/manager/restock', async (req, res) => {
   if (req.isAuthenticated() && req.user.role === 'Manager') {
     // go ahead and get inventory data from db
@@ -862,6 +871,8 @@ app.get('/manager/zreport', async (req, res) => {
     }
   }
   res.redirect('/manager');
+});
+
 app.post('/manager/restock/update', async (req, res) => {
   try {
     await pool.query('UPDATE ingredients SET quantity = full_quantity WHERE (quantity <= minimum_quantity) AND (full_quantity > 0);');
