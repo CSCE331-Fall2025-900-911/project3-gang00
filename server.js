@@ -208,9 +208,11 @@ app.get('/help', (req, res) => {
   };
   const faqs = [
     { q: 'How do I place an order?', a: 'Go to the Order page, pick items, customize, and checkout.' },
-    { q: 'Do you offer delivery?', a: 'Yes, depending on your location.' },
+    { q: 'Do you offer delivery?', a: 'No, we do not offer delivery.' },
     { q: 'Can I customize my drink?', a: 'Yes—choose sweetness, ice, and toppings.' },
-    { q: 'Are allergen details available?', a: 'Allergen info is listed on each product page.' },
+    { q: 'Do you need an account to order?', a: 'No, you can order as a guest.' },
+    { q: 'Do you get points per order?', a: 'Yes, but only if you have an account.' },
+    { q: 'How do I sign in without google?', a: 'You need to link a password to your account first.' }
   ];
 
   const submitted = req.query.submitted === '1';
@@ -391,7 +393,7 @@ app.get('/profile', (req, res) => {
   res.redirect('/');
 })
 
-// Contact
+// Contact page
 app.get('/contact', (req, res) => {
   const site = {
     brand: 'Sharetea',
@@ -756,7 +758,7 @@ app.post('/manager/inventory/add', async (req, res) => {
     const fullAmount = req.body.quantity;
     const restockAmount = Math.floor(req.body.quantity / 3);
     await pool.query('INSERT INTO ingredients (ingredient_name, quantity, minimum_quantity, full_quantity, ingredient_unit) VALUES ($1, $2, $3, $4, $5);', 
-      [req.body.name, req.body.quantity, fullAmount, restockAmount, req.body.unit]
+      [req.body.name, req.body.quantity, restockAmount, fullAmount, req.body.unit]
     );
     res.json({ success: true });
   } catch (err) {
@@ -804,6 +806,12 @@ app.get('/manager/xreport', async (req, res) => {
       const categoriesRes = await pool.query(categoriesSql);
 
       return res.render('manager/xreport', { user: req.user, summary: summaryRes.rows[0], products: productsRes.rows, perHour: perHourRes.rows, categories: categoriesRes.rows });
+app.get('/manager/restock', async (req, res) => {
+  if (req.isAuthenticated() && req.user.role === 'Manager') {
+    // go ahead and get inventory data from db
+    try {
+      const { rows } = await pool.query('SELECT * FROM ingredients WHERE (quantity <= minimum_quantity) AND (full_quantity > 0) ORDER BY ingredient_id;');
+      return res.render('manager/restock', { user: req.user, data: rows });
     } catch (err) {
       console.error('DB error:', err);
       res.status(500).send('Database query failed');
@@ -854,6 +862,14 @@ app.get('/manager/zreport', async (req, res) => {
     }
   }
   res.redirect('/manager');
+app.post('/manager/restock/update', async (req, res) => {
+  try {
+    await pool.query('UPDATE ingredients SET quantity = full_quantity WHERE (quantity <= minimum_quantity) AND (full_quantity > 0);');
+    res.json({ success: true });
+  } catch (err) {
+    console.error('DB error:', err);
+    res.json({ success: false, message: "Database query failed"});
+  }
 });
 
 

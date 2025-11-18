@@ -641,6 +641,38 @@ input:focus{
 
 .weather-reco__text { }
 
+.modal-order {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
+
+.modal-order.hidden {
+    display: none;
+}
+
+.modal-order-content {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    width: 350px;
+    max-height: 70vh;
+    overflow-y: auto;
+    text-align: center;
+}
+
+.modal-order-buttons {
+    margin-top: 15px;
+    display: flex;
+    justify-content: space-around;
+}
 
 /* Manager Page */
 .grid { 
@@ -682,7 +714,7 @@ input:focus{
   justify-content: center;
 }
 
-.tableContainer {
+.inventoryTableContainer {
   height: 550px;        
   overflow-y: auto;     /* enables vertical scrolling */
   /* border: 2px solid #ccc; */
@@ -778,4 +810,12 @@ input[type="unit"]{
   display: block;     /* forces label to take full width */
   text-align: left;   /* aligns text to the left */
   margin-bottom: 4px; /* small spacing above inputs */
+}
+
+.tableContainer {
+  /* border: 2px solid #ccc; */
+  border-radius: 4px;
+  width: 70%;
+  box-shadow:0 4px 12px rgba(0,0,0,0.4);
+  align-self: center;
 }
