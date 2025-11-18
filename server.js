@@ -198,6 +198,40 @@ app.get('/manager', (req, res) => {
   res.render('manager', { user: req.user });
 })
 
+function isManager(req) {
+  return req.isAuthenticated() && req.user && req.user.role === 'Manager';
+}
+
+function getDefaultReportRange() {
+  const end = new Date();
+  end.setHours(23, 59, 59, 999);
+  const start = new Date(end);
+  start.setDate(start.getDate() - 6);
+  start.setHours(0, 0, 0, 0);
+  return { start, end };
+}
+
+function toDateInputValue(date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function parseReportRange(startStr, endStr) {
+  if (startStr && endStr) {
+    const start = new Date(startStr);
+    const end = new Date(endStr);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      return { error: 'Invalid date values' };
+    }
+    start.setHours(0, 0, 0, 0);
+    end.setHours(23, 59, 59, 999);
+    if (start > end) {
+      return { error: 'Start date must be on or before end date' };
+    }
+    return { start, end };
+  }
+  return getDefaultReportRange();
+}
+
 // Help
 app.get('/help', (req, res) => {
   const site = {
@@ -788,6 +822,148 @@ app.post('/manager/restock/update', async (req, res) => {
   } catch (err) {
     console.error('DB error:', err);
     res.json({ success: false, message: "Database query failed"});
+  }
+});
+
+app.get('/manager/reports', (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res.redirect('/employee-sign-in');
+  }
+  if (req.user.employee_id === undefined) {
+    return res.redirect('/');
+  }
+  if (req.user.role !== 'Manager') {
+    return res.redirect('/manager');
+  }
+
+  const range = getDefaultReportRange();
+  res.render('manager/reports', {
+    user: req.user,
+    defaultRange: {
+      start: toDateInputValue(range.start),
+      end: toDateInputValue(range.end),
+    }
+  });
+});
+
+app.get('/manager/reports/data', async (req, res) => {
+  if (!isManager(req)) {
+    return res.status(401).json({ success: false, message: 'Unauthorized' });
+  }
+
+  const range = parseReportRange(req.query.start, req.query.end);
+  if (range.error) {
+    return res.status(400).json({ success: false, message: range.error });
+  }
+
+  const { start, end } = range;
+
+  try {
+    const summaryPromise = pool.query(`
+      SELECT COALESCE(SUM(sub_total), 0) AS total_sales,
+             COUNT(*) AS order_count
+      FROM orders
+      WHERE date_time BETWEEN $1 AND $2;
+    `, [start, end]);
+
+    const revenuePromise = pool.query(`
+      SELECT DATE(date_time) AS day, SUM(sub_total) AS revenue
+      FROM orders
+      WHERE date_time BETWEEN $1 AND $2
+      GROUP BY DATE(date_time)
+      ORDER BY DATE(date_time);
+    `, [start, end]);
+
+    const topProductsPromise = pool.query(`
+      SELECT p.product_name,
+             SUM(oi.qty) AS total_qty,
+             SUM(oi.qty * oi.item_price) AS total_revenue
+      FROM orderitems oi
+      JOIN orders o ON oi.order_id = o.order_id
+      JOIN products p ON oi.product_id = p.product_id
+      WHERE o.date_time BETWEEN $1 AND $2
+      GROUP BY p.product_name
+      ORDER BY total_revenue DESC
+      LIMIT 5;
+    `, [start, end]);
+
+    const categoryPromise = pool.query(`
+      SELECT c.category_name,
+             SUM(oi.qty) AS total_qty,
+             SUM(oi.qty * oi.item_price) AS total_revenue
+      FROM orderitems oi
+      JOIN orders o ON oi.order_id = o.order_id
+      JOIN products p ON oi.product_id = p.product_id
+      JOIN categories c ON p.category_id = c.category_id
+      WHERE o.date_time BETWEEN $1 AND $2
+      GROUP BY c.category_name
+      ORDER BY total_revenue DESC;
+    `, [start, end]);
+
+    const recentOrdersPromise = pool.query(`
+      SELECT order_id, sub_total, date_time
+      FROM orders
+      WHERE date_time BETWEEN $1 AND $2
+      ORDER BY date_time DESC
+      LIMIT 10;
+    `, [start, end]);
+
+    const [
+      summaryResult,
+      revenueResult,
+      topProductsResult,
+      categoryResult,
+      recentOrdersResult
+    ] = await Promise.all([
+      summaryPromise,
+      revenuePromise,
+      topProductsPromise,
+      categoryPromise,
+      recentOrdersPromise
+    ]);
+
+    const totalSales = Number(summaryResult.rows[0]?.total_sales || 0);
+    const orderCount = Number(summaryResult.rows[0]?.order_count || 0);
+    const averageOrder = orderCount > 0 ? totalSales / orderCount : 0;
+
+    const revenueByDay = revenueResult.rows.map(row => ({
+      day: row.day,
+      revenue: Number(row.revenue || 0),
+    }));
+
+    const topProducts = topProductsResult.rows.map(row => ({
+      name: row.product_name,
+      qty: Number(row.total_qty || 0),
+      revenue: Number(row.total_revenue || 0),
+    }));
+
+    const categoryBreakdown = categoryResult.rows.map(row => ({
+      name: row.category_name,
+      qty: Number(row.total_qty || 0),
+      revenue: Number(row.total_revenue || 0),
+    }));
+
+    const recentOrders = recentOrdersResult.rows.map(row => ({
+      orderId: row.order_id,
+      total: Number(row.sub_total || 0),
+      placedAt: row.date_time ? new Date(row.date_time).toISOString() : null,
+    }));
+
+    res.json({
+      success: true,
+      summary: {
+        totalSales,
+        orderCount,
+        averageOrder,
+      },
+      revenueByDay,
+      topProducts,
+      categoryBreakdown,
+      recentOrders,
+    });
+  } catch (err) {
+    console.error('Manager report error:', err);
+    res.status(500).json({ success: false, message: 'Failed to load reports' });
   }
 });
 
