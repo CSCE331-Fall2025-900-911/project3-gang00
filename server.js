@@ -149,7 +149,6 @@ app.get('/', (req, res) => {
 app.get('/employee-sign-in', (req, res) => res.render('employeeSignIn'));
 app.get('/general-sign-in', (req, res) => res.render('generalSignIn'));
 app.get('/customer-sign-in', (req, res) => res.render('customerSignIn'));
-app.get('/employee-sign-up', (req, res) => res.render('employeeSignUp'));
 app.get('/customer-sign-up', (req, res) => res.render('customerSignUp'));
 
 // Employee portal (guarded)
@@ -708,29 +707,35 @@ app.get('/manager/inventory', async (req, res) => {
 });
 
 app.post('/manager/inventory/update', async (req, res) => {
-  try {
-    await pool.query('UPDATE ingredients SET ingredient_name = $1, quantity = $2, ingredient_unit = $3 WHERE ingredient_id = $4;', 
-      [req.body.name, req.body.quantity, req.body.unit, req.body.id]
-    );
-    res.json({ success: true });
-  } catch (err) {
-    console.error('DB error:', err);
-    res.json({ success: false, message: "Database query failed"});
+  if (req.isAuthenticated() && req.user.role === 'Manager') {
+    try {
+      await pool.query('UPDATE ingredients SET ingredient_name = $1, quantity = $2, ingredient_unit = $3 WHERE ingredient_id = $4;', 
+        [req.body.name, req.body.quantity, req.body.unit, req.body.id]
+      );
+      res.json({ success: true });
+    } catch (err) {
+      console.error('DB error:', err);
+      res.json({ success: false, message: "Database query failed"});
+    }
   }
+  res.redirect('/manager');
 });
 
 app.post('/manager/inventory/add', async (req, res) => {
-  try {
-    const fullAmount = req.body.quantity;
-    const restockAmount = Math.floor(req.body.quantity / 3);
-    await pool.query('INSERT INTO ingredients (ingredient_name, quantity, minimum_quantity, full_quantity, ingredient_unit) VALUES ($1, $2, $3, $4, $5);', 
-      [req.body.name, req.body.quantity, restockAmount, fullAmount, req.body.unit]
-    );
-    res.json({ success: true });
-  } catch (err) {
-    console.error('DB error:', err);
-    res.json({ success: false, message: "Database query failed"});
+  if (req.isAuthenticated() && req.user.role === 'Manager') {
+    try {
+      const fullAmount = req.body.quantity;
+      const restockAmount = Math.floor(req.body.quantity / 3);
+      await pool.query('INSERT INTO ingredients (ingredient_name, quantity, minimum_quantity, full_quantity, ingredient_unit) VALUES ($1, $2, $3, $4, $5);', 
+        [req.body.name, req.body.quantity, restockAmount, fullAmount, req.body.unit]
+      );
+      res.json({ success: true });
+    } catch (err) {
+      console.error('DB error:', err);
+      res.json({ success: false, message: "Database query failed"});
+    }
   }
+  res.redirect('/manager');
 });
 
 app.get('/manager/restock', async (req, res) => {
@@ -748,13 +753,50 @@ app.get('/manager/restock', async (req, res) => {
 });
 
 app.post('/manager/restock/update', async (req, res) => {
-  try {
-    await pool.query('UPDATE ingredients SET quantity = full_quantity WHERE (quantity <= minimum_quantity) AND (full_quantity > 0);');
-    res.json({ success: true });
-  } catch (err) {
-    console.error('DB error:', err);
-    res.json({ success: false, message: "Database query failed"});
+  if (req.isAuthenticated() && req.user.role === 'Manager') {
+    try {
+      await pool.query('UPDATE ingredients SET quantity = full_quantity WHERE (quantity <= minimum_quantity) AND (full_quantity > 0);');
+      res.json({ success: true });
+    } catch (err) {
+      console.error('DB error:', err);
+      res.json({ success: false, message: "Database query failed"});
+    }
   }
+  res.redirect('/manager');
+});
+
+app.get('/manager/employees', async (req, res) => {
+  if (req.isAuthenticated() && req.user.role === 'Manager') {
+    // go ahead and get inventory data from db
+    try {
+      const { rows } = await pool.query('SELECT * FROM employees ORDER BY employee_id;');
+      return res.render('manager/employeeReport', { user: req.user, data: rows });
+    } catch (err) {
+      console.error('DB error:', err);
+      res.status(500).send('Database query failed');
+    }
+  }
+  res.redirect('/manager');
+});
+
+app.get('/manager/employee-sign-up', (req, res) => {
+  if (req.isAuthenticated() && req.user.role === 'Manager') {
+    return res.render('employeeSignUp');
+  }
+  res.redirect('/manager');
+});
+
+app.post('/manager/employees/remove', async (req, res) => {
+  if (req.isAuthenticated() && req.user.role === 'Manager') {
+    try {
+      await pool.query('DELETE FROM employees WHERE employee_id = $1;', [req.body.id]);
+      return res.json({ success: true });
+    } catch (err) {
+      console.error('DB error:', err);
+      return res.json({ success: false, message: "Database query failed"});
+    }
+  }
+  res.redirect('/manager');
 });
 
 
