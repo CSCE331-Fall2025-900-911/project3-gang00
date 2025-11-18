@@ -236,7 +236,7 @@ app.post('/contact', async (req,res)=>{
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) 
       return res.status(400).send('Invalid email');
-    
+
     if (message.length > 5000) 
       return res.status(400).send('Message too long');
 
@@ -767,6 +767,45 @@ app.post('/manager/inventory/add', async (req, res) => {
   }
 });
 
+// Xreport
+app.get('/manager/xreport', async (req, res) => {
+  if (req.isAuthenticated() && req.user.role === 'Manager') {
+    // go ahead and get xreport data from db
+    try {
+      const summarySql = `
+                          SELECT COUNT(*) AS orders, COALESCE(SUM(sub_total), 0)::NUMERIC(12,2) AS gross_sales,
+                          (CASE WHEN COUNT(*) = 0 THEN 0
+                              ELSE ROUND(SUM(sub_total)/COUNT(*), 2)
+                              END) AS avg_ticket FROM orders
+                          WHERE date_time >= CURRENT_DATE AND date_time <  NOW();`;
+
+      const productsSql = `
+                          SELECT p.product_id, p.product_name, SUM(oi.qty) AS qty_sold FROM orderitems oi JOIN orders o ON o.order_id = oi.order_id JOIN products p ON p.product_id = oi.product_id
+                          WHERE o.date_time >= CURRENT_DATE AND o.date_time < NOW()
+                          GROUP BY p.product_id, p.product_name
+                          ORDER BY qty_sold DESC, p.product_name`;
+
+      const perHourSql = `
+                          SELECT EXTRACT(HOUR FROM date_time)::int AS per_hour, COUNT(*) AS orders, ROUND(SUM(sub_total),2) AS gross_sales FROM orders
+                          WHERE date_time >= CURRENT_DATE AND date_time < NOW()
+                          GROUP BY 1
+                          ORDER BY 1`;
+
+      const categoriesSql = `
+                            SELECT c.category_name, SUM(oi.qty) AS qty_sold, ROUND(SUM(oi.qty * COALESCE(oi.item_price, p.product_price)), 2) AS sales FROM orderitems oi
+                            JOIN orders o ON o.order_id = oi.order_id
+                            JOIN products p ON p.product_id = oi.product_id
+                            JOIN categories c ON c.category_id = p.category_id
+                            WHERE o.date_time >= CURRENT_DATE AND o.date_time < NOW()
+                            GROUP BY c.category_name
+                            ORDER BY sales DESC;`;
+
+      const summaryRes = await pool.query(summarySql);
+      const productsRes = await pool.query(productsSql);
+      const perHourRes = await pool.query(perHourSql);
+      const categoriesRes = await pool.query(categoriesSql);
+
+      return res.render('manager/xreport', { user: req.user, summary: summaryRes.rows[0], products: productsRes.rows, perHour: perHourRes.rows, categories: categoriesRes.rows });
 app.get('/manager/restock', async (req, res) => {
   if (req.isAuthenticated() && req.user.role === 'Manager') {
     // go ahead and get inventory data from db
@@ -781,6 +820,48 @@ app.get('/manager/restock', async (req, res) => {
   res.redirect('/manager');
 });
 
+// Zreport
+app.get('/manager/zreport', async (req, res) => {
+  if (req.isAuthenticated() && req.user.role === 'Manager') {
+    // go ahead and get inventory data from db
+    try {
+      const zreportSql = `SELECT id, gross_sales, tax_collected, total_sales
+                          FROM z_reports
+                          WHERE business_date = CURRENT_DATE`;
+      let existingRes = await pool.query(zreportSql);
+
+      if(existingRes.rowCount > 0){
+        const row = existingRes.rows[0];
+        return res.render('manager/zreport', { user: req.user, gross_sales: row.gross_sales, tax_collected: row.tax_collected, total_sales: row.total_sales});
+      }
+
+      const aggZreport = ` SELECT COALESCE(SUM(sub_total), 0)::numeric(12,2) AS gross_sales 
+                            FROM orders 
+                            WHERE date_time::date = CURRENT_DATE`;
+
+      const newZreportRes = await pool.query(aggZreport);
+
+      let gross = Number(newZreportRes.rows[0].gross_sales || 0);
+      let tax = gross * 0.05;
+      let total = gross + tax;
+
+      const insertSql = `INSERT INTO z_reports (business_date, gross_sales, tax_collected, total_sales)
+                          VALUES (CURRENT_DATE, $1, $2, $3)`;
+
+      const insertRes = await pool.query(insertSql, [gross, tax, total]);
+
+      existingRes = await pool.query(zreportSql);
+      const row = existingRes.rows[0];
+
+      return res.render('manager/zreport', { user: req.user, gross_sales: row.gross_sales, tax_collected: row.tax_collected, total_sales: row.total_sales});
+
+      
+    } catch (err) {
+      console.error('DB error:', err);
+      res.status(500).send('Database query failed');
+    }
+  }
+  res.redirect('/manager');
 app.post('/manager/restock/update', async (req, res) => {
   try {
     await pool.query('UPDATE ingredients SET quantity = full_quantity WHERE (quantity <= minimum_quantity) AND (full_quantity > 0);');
