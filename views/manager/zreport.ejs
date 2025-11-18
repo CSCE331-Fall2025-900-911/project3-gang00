@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>ShareTea Inventory</title>
+        <link rel="stylesheet" href="/styles.css">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    </head>
+<body>
+    <nav id="navbar" class="navbar" style="padding: 10px 10px;">
+        <div style="display: flex; flex-direction: row; align-items: center;">
+            <a href="/manager" style="margin-left: 10px; margin-right: 20px;"><img src="/img/management/arrow-left.png" class="back-arrow"></a>
+            <div>
+                <p1 style="font-weight: 500;">Managers</p1>
+                <h1 style="font-size: 50px; font-weight: 600; margin-top: -15px;">Z-Report</h1>
+            </div>
+            
+        </div>
+        
+        <ul class = "nav-links">
+            <li class="weather-dropdown">
+                <button class="weather-btn" id="weatherBtn" aria-expanded="false" aria-controls="weatherPanel">
+                    <img src="/weather.png" alt="Weather" class="weather-btn__img">
+                </button>
+        
+                <div id="weatherPanel" class="weather-panel" role="region" aria-label="Weather and recommendation">
+                    <div id="weatherContent" class="weather-content">
+                    <div class="weather-header">
+                        <div id="wxIcon" class="weather-icon"></div>
+                        <div class="weather-meta">
+                        <div id="wxCity" class="weather-city">—</div>
+                        <div class="weather-line"><span id="wxTemp">—</span> · <span id="wxCond">—</span></div>
+                        </div>
+                    </div>
+                    <div class="weather-reco">
+                        <div class="weather-reco__title">Recommended drink</div>
+                        <div id="wxDrink" class="weather-reco__text">—</div>
+                    </div>
+                    </div>
+                </div>
+
+            <li>
+                <button class="speaker-btn" id="textToSpeechBtn">
+                    <img src="/Muted.png" alt="Text-to-Speech" class="TextToSpeech-img" id="speakerImg">
+                </button>
+            </li>
+            <li class="lang-dropdown no-translate">
+                <button class="translate-btn" id="translateBtn">
+                    <img src="/Translate.png" alt="Translate" class="Translate-img" id="translateImg">
+                </button>
+                <div id="langMenu" class="lang-menu hidden">
+                    <select id="langSel" aria-label="Select language">
+                      <option value="en" selected>English</option>
+                      <option value="zh">中文</option>
+                      <option value="es">Español</option>
+                      <option value="fr">Français</option>
+                      <option value="ja">日本語</option>
+                    </select>
+                </div>
+            </li>
+
+
+
+        </ul>
+
+    </nav>
+
+    <main class="zreport-layout" style="padding:24px;">
+        <section class="card">
+            <h2>Totals</h2>
+            <table class="myTable">
+              <tbody>
+                <tr>
+                  <th>Gross Sales</th>
+                  <td>$<%= gross_sales %></td>
+                </tr>
+                <tr>
+                  <th>Tax Collected</th>
+                  <td>$<%= tax_collected %></td>
+                </tr>
+                <tr>
+                  <th>Total Sales</th>
+                  <td>$<%= total_sales %></td>
+                </tr>
+              </tbody>
+            </table>
+            <p>
+              Z-Report is calculated for all orders placed today.
+            </p>
+          </section>
+      </main>
+
+
+    <script src="/index.js"></script>
+    <script src="/tts.js"></script>
+    <script src="/accountDropdown.js"></script>
+    <script src="/weather.js"></script>
+</body>
+</html>
