@@ -799,6 +799,73 @@ app.post('/manager/employees/remove', async (req, res) => {
   res.redirect('/manager');
 });
 
+app.get('/manager/menu', async (req, res) => {
+  if (req.isAuthenticated() && req.user.role === 'Manager') {
+    // go ahead and get inventory data from db
+    try {
+      const { rows } = await pool.query('SELECT p.product_id, p.product_name, p.product_price, c.category_name FROM products p JOIN categories c ON p.category_id = c.category_id ORDER BY category_name;');
+      const { rows: categories } = await pool.query('SELECT * FROM categories ORDER BY category_id;');
+      const { rows: ingredients } = await pool.query('SELECT * FROM ingredients ORDER BY ingredient_id;');
+      return res.render('manager/menuReport', { user: req.user, data: rows, categories: categories, ingredients: ingredients });
+    } catch (err) {
+      console.error('DB error:', err);
+      return res.status(500).send('Database query failed');
+    }
+  }
+  res.redirect('/manager');
+});
+
+app.post('/manager/getIngredientID', async (req, res) => {
+  if (req.isAuthenticated() && req.user.role === 'Manager') {
+    try {
+      const { rows: data } = await pool.query('SELECT ingredient_id FROM ingredients WHERE ingredient_name = $1 LIMIT 1;', [req.body.ingredient]);
+      const value = data[0].ingredient_id;
+      return res.json({success: true, value: value})
+    } catch (err) {
+      console.error('DB error:', err);
+      return res.json({ success: false, message: "Database query failed"});
+    }
+  }
+  res.redirect('/manager');
+});
+
+app.post('/manager/menu/add', async (req, res) => {
+  if (req.isAuthenticated() && req.user.role === 'Manager') {
+    try {
+      const { rows: result} = await pool.query('SELECT (category_id) FROM categories WHERE category_name = $1 LIMIT 1', [req.body.category]);
+
+      const { rows } = await pool.query('INSERT INTO products (product_name, product_price, category_id) VALUES ($1, $2, $3) RETURNING product_id;', 
+        [req.body.name, req.body.price, result[0].category_id]
+      );
+
+      for (const ingredient of req.body.productIngredients) {
+        await pool.query('INSERT INTO productingredients (ingredient_id, product_id, ingredient_amount) VALUES ($1, $2, $3);', 
+          [ingredient.ingredient_id, rows[0].product_id, ingredient.ingredient_amount]
+        );
+      }
+
+      return res.json({ success: true });
+    } catch (err) {
+      console.error('DB error:', err);
+      return res.json({ success: false, message: "Database query failed"});
+    }
+  }
+  res.redirect('/manager');
+});
+
+app.post('/manager/menu/remove', async (req, res) => {
+  if (req.isAuthenticated() && req.user.role === 'Manager') {
+    try {
+      await pool.query('DELETE FROM products WHERE product_id = $1;', [req.body.id]);
+      return res.json({ success: true });
+    } catch (err) {
+      console.error('DB error:', err);
+      return res.json({ success: false, message: "Database query failed"});
+    }
+  }
+  res.redirect('/manager');
+});
+
 
 // ---- Start Server ----
 app.listen(port, () => {

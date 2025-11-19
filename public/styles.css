@@ -747,7 +747,9 @@ input:focus{
 
 input[type="name"],
 input[type="quantity"],
-input[type="unit"]{
+input[type="unit"],
+input[type="price"],
+select[type="category"]{
   width:100%;
   padding:12px 14px;
   border-radius:10px;
@@ -758,6 +760,18 @@ input[type="unit"]{
   transition:box-shadow .12s, border-color .12s;
   margin-top: -10px;
 }
+
+/* select[type="category"]{
+  width:100%;
+  padding:12px 14px;
+  border-radius:10px;
+  border:1px solid rgba(15,23,42,0.08);
+  background:#fff;
+  font-size:14px;
+  outline:none;
+  transition:box-shadow .12s, border-color .12s;
+  margin-top: -10px;
+} */
 
 #update-ingredient-form label {
   display: block;     /* forces label to take full width */
@@ -771,10 +785,32 @@ input[type="unit"]{
   margin-bottom: 4px; /* small spacing above inputs */
 }
 
+#add-product-form label {
+  display: block;     /* forces label to take full width */
+  text-align: left;   /* aligns text to the left */
+  margin-bottom: 4px; /* small spacing above inputs */
+}
+
+#update-product-form label {
+  display: block;     /* forces label to take full width */
+  text-align: left;   /* aligns text to the left */
+  margin-bottom: 4px; /* small spacing above inputs */
+}
+
 .tableContainer {
   /* border: 2px solid #ccc; */
   border-radius: 4px;
   width: 70%;
   box-shadow:0 4px 12px rgba(0,0,0,0.4);
   align-self: center;
+}
+
+#addIngredientsDiv {
+  display: flex; 
+  flex-direction: row;
+  border: 1px solid black; 
+  width: 100%; 
+  justify-content: space-between;
+  margin-bottom: 20px;
+  background-color: #f2f2f2;
 }

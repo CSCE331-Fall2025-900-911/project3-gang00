@@ -10,6 +10,10 @@ function goToEmployees() {
     window.location.href = "/manager/employees";
 }
 
+function goToMenu() {
+    window.location.href = "/manager/menu";
+}
+
 function toggleAccountDropDown() {
     const dropdown = document.getElementById('account-dropdown');
     const isVisible = dropdown.style.display === 'block';
