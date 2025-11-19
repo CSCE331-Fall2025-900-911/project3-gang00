@@ -511,7 +511,7 @@ app.get('/order', async (req, res) => {
 
 // -------- Checkout Route --------
 app.post('/checkout', async (req, res) => {
-  const { orderItems, subtotal } = req.body;
+  const { orderItems, subtotal, points} = req.body;
 
   // Validate input
   if (!Array.isArray(orderItems) || orderItems.length === 0) {
@@ -581,6 +581,21 @@ app.post('/checkout', async (req, res) => {
          VALUES ($1, $2, $3, $4);`,
         [order_id, productId, item_count, productPrice]
       );
+
+      //update user points if user exists
+      if(req.isAuthenticated() && req.user.customer_id != undefined){
+        const result = await client.query(
+        `UPDATE customers 
+         SET points = points + $1
+         WHERE "email" = $2
+         RETURNING points;`,
+         [points, req.user.email]
+        );
+
+        const newPoints = result.rows[0].points;
+        req.user.points = newPoints;
+      }
+
     }
 
     await client.query('COMMIT');
