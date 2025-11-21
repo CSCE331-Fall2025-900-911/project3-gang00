@@ -6,17 +6,20 @@ function goToInbox() {
     window.location.href = "/manager/inbox";
 }
 
-function goToXreport(){
+function goToXreport() {
     window.location.href = "/manager/xreport";
-
 }
 
-function goToZreport(){
+function goToZreport() {
     window.location.href = "/manager/zreport";
 }
 
 function goToRestock() {
     window.location.href = "/manager/restock";
+}
+
+function goToReports() {
+    window.location.href = "/manager/reports";
 }
 
 function goToEmployees() {
@@ -51,8 +54,7 @@ function closeLogoutModal() {
 }
 
 async function confirmLogout() {
-    //window.location.href = '/employee/logout';
-    const res = await fetch('/employee/logout', {method: 'GET'});
+    const res = await fetch('/employee/logout', { method: 'GET' });
     if (res.redirected) {
         window.location.href = res.url;
     }

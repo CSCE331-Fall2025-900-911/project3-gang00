@@ -802,17 +802,123 @@ select[type="category"]{
   margin-top: -10px;
 }
 
-/* select[type="category"]{
-  width:100%;
-  padding:12px 14px;
-  border-radius:10px;
-  border:1px solid rgba(15,23,42,0.08);
-  background:#fff;
-  font-size:14px;
-  outline:none;
-  transition:box-shadow .12s, border-color .12s;
-  margin-top: -10px;
-} */
+/* Manager Reports */
+.reports-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 30px;
+}
+
+.report-controls {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.report-controls .form-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 180px;
+}
+
+.report-controls label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 6px;
+}
+
+.report-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.summary-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.summary-card p {
+  margin-bottom: 6px;
+  color: #666;
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.chart-card,
+.table-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.chart-card {
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+}
+
+.table-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chart-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.chart-card canvas {
+  width: 100% !important;
+  max-height: 250px;
+}
+
+.reports-status {
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.tables-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.table-card table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+
+.table-card th,
+.table-card td {
+  text-align: left;
+  padding: 8px;
+  border-bottom: 1px solid #eee;
+}
+
+.table-card tbody tr:last-child td {
+  border-bottom: none;
+}
 
 #update-ingredient-form label {
   display: block;     /* forces label to take full width */
