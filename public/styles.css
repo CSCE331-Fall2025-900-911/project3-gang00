@@ -788,7 +788,9 @@ input:focus{
 
 input[type="name"],
 input[type="quantity"],
-input[type="unit"]{
+input[type="unit"],
+input[type="price"],
+select[type="category"]{
   width:100%;
   padding:12px 14px;
   border-radius:10px;
@@ -930,10 +932,32 @@ input[type="unit"]{
   margin-bottom: 4px; /* small spacing above inputs */
 }
 
+#add-product-form label {
+  display: block;     /* forces label to take full width */
+  text-align: left;   /* aligns text to the left */
+  margin-bottom: 4px; /* small spacing above inputs */
+}
+
+#update-product-form label {
+  display: block;     /* forces label to take full width */
+  text-align: left;   /* aligns text to the left */
+  margin-bottom: 4px; /* small spacing above inputs */
+}
+
 .tableContainer {
   /* border: 2px solid #ccc; */
   border-radius: 4px;
   width: 70%;
   box-shadow:0 4px 12px rgba(0,0,0,0.4);
   align-self: center;
+}
+
+#addIngredientsDiv {
+  display: flex; 
+  flex-direction: row;
+  border: 1px solid black; 
+  width: 100%; 
+  justify-content: space-between;
+  margin-bottom: 20px;
+  background-color: #f2f2f2;
 }

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<head>
+    <title>ShareTea Menu Reports</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav id="navbar" class="navbar" style="padding: 10px;">
+        <div style="display: flex; flex-direction: row; align-items: center;">
+            <a href="/manager" style="margin-left: 10px; margin-right: 20px;"><img src="/img/management/arrow-left.png" class="back-arrow"></a>
+            <div>
+                <p1 style="font-weight: 500;">Managers</p1>
+                <h1 style="font-size: 50px; font-weight: 600; margin-top: -15px;">Menu</h1>
+            </div>
+        </div>
+        <ul class="nav-links">
+            <li><a href="javascript:void(0)" onclick="openAddBox()" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: black;">
+                <img src="/img/management/add.png" style="height: 40px;">
+                Add Product
+            </a></li>
+
+            <li><a href="javascript:void(0)" onclick="openRemoveBox()" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: black;">
+                <img src="/img/management/remove.png" style="height: 40px;">
+                Remove Product
+            </a></li>
+        </ul>
+    </nav>
+
+    <!-- Modal backdrop -->
+    <div class="modal" id="add-modal">
+        <!-- Modal box -->
+        <div id="modal-box">
+            <h3 style="margin-bottom: 16px;">Add Product</h3>
+
+            <form id="add-product-form" class="form" novalidate>
+                <label for="name" class="visually-hidden">Product Name:</label>
+                <input id="name-add" name="name" type="name" placeholder="Name" />
+
+                <label for="price" class="visually-hidden">Price ($):</label>
+                <input id="price-add" name="price" type="price" placeholder="Price" />
+
+                <label for="category" class="visually-hidden">Category:</label>
+                <select id="myDropdown-add" type="category">
+                    <option value="">Select a category</option>
+                    <% categories.forEach(category => { %>
+                        <option value="<%= category.category_name %>"><%= category.category_name %></option>
+                    <% }) %>
+                </select>
+
+                <p style="margin-top: 20px;">Select ingredients:</p>
+                <div id="addIngredientsDiv">
+                    <div style="width: 50%; display: flex; flex-direction: column; align-items: center;" >
+                        <select type="category" id="ingredient_select" style="width: 120px; margin-top: 10px;">
+                            <option value="">Ingredient</option>
+                            <% ingredients.forEach(ingredient => { %>
+                                <option value="<%= ingredient.ingredient_name %>"><%= ingredient.ingredient_name %> (<%= ingredient.ingredient_unit %>)</option>
+                            <% }) %>
+                        </select>
+                        <input id="amount" name="amount" type="price" placeholder="Amount" style="margin-top: 5px; width: 50%;"/>
+                        <button onclick="addProductIngredient()" type="button" style="padding: 8px 16px; border: 1px solid #ccc; background: white; border-radius: 6px; cursor: pointer; margin-top: 5px; margin-bottom: 10px;">
+                            Add
+                        </button>
+                    </div>
+                    <div style="width: 50%; height: 100%; align-self: center;">
+                        <p id="ingredientText" style="font-size: small; padding-left: 10px; padding-right: 10px;">No ingredients selected.</p>
+                    </div> 
+                </div>
+            </form>
+
+            <div style="display: flex; justify-content: center; gap: 16px; margin-top: 20px;">
+                <button onclick="addProduct()" style="padding: 8px 16px; border: none; background: #d9534f; color: white; border-radius: 6px; cursor: pointer;">
+                    Add
+                </button>
+                <button onclick="closeAddBox()" style="padding: 8px 16px; border: 1px solid #ccc; background: white; border-radius: 6px; cursor: pointer;">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal backdrop -->
+    <div class="modal" id="remove-modal">
+        <!-- Modal box -->
+        <div id="modal-box">
+            <h3 style="margin-bottom: 16px;">Remove Product</h3>
+
+            <p id="modal-id"></p>
+            <p id="modal-name"></p>
+            <p id="modal-price"></p>
+            <p id="modal-category"></p>
+
+
+            <p style="margin-top: 30px;">Are you sure you want to permanently remove this product?</p>
+
+            
+
+            <div style="display: flex; justify-content: center; gap: 16px; margin-top: 20px;">
+                <button onclick="removeProduct()" style="padding: 8px 16px; border: none; background: #d9534f; color: white; border-radius: 6px; cursor: pointer;">
+                    Remove
+                </button>
+                <button onclick="closeRemoveBox()" style="padding: 8px 16px; border: 1px solid #ccc; background: white; border-radius: 6px; cursor: pointer;">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <section style="overflow-y: auto;">
+        <div class="left">
+            <div class="tableContainer">
+                <table class="myTable" id="myTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Product Name</th>
+                            <th>Price ($)</th>
+                            <th>Drink Category</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% data.forEach(product => { %>
+                            <tr>
+                                <td><%= product.product_id %></td>
+                                <td><%= product.product_name %></td>
+                                <td><%= product.product_price %></td>
+                                <td><%= product.category_name %></td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <script type="module" src="/langSelect.js"></script>
+    <script src="/index.js"></script>
+    <script src="/menuReport.js"></script>
+</body> 

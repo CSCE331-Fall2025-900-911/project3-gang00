@@ -18,6 +18,7 @@ form.addEventListener('submit', e => {
         if (data.success) {
             // window.location.href = "/employee"; // GET request to employee page
             alert("Account successfully created!")
+            window.location.href = "/manager/employees"
         } else {
             if (data.message != null) {
                 alert("Account creation failed: " + data.message);
