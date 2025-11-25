@@ -783,7 +783,7 @@ app.get('/manager/inventory', async (req, res) => {
       return res.render('manager/inventory', { user: req.user, data: rows });
     } catch (err) {
       console.error('DB error:', err);
-      res.status(500).send('Database query failed');
+      return res.status(500).send('Database query failed');
     }
   }
   res.redirect('/manager');
@@ -797,7 +797,7 @@ app.get('/manager/inbox', async (req, res) => {
       return res.render('manager/inbox', { user: req.user, data: rows });
     } catch (err) {
       console.error('DB error:', err);
-      res.status(500).send('Database query failed');
+      return res.status(500).send('Database query failed');
     }
   }
   res.redirect('/manager');
@@ -809,10 +809,10 @@ app.post('/manager/inventory/update', async (req, res) => {
       await pool.query('UPDATE ingredients SET ingredient_name = $1, quantity = $2, ingredient_unit = $3 WHERE ingredient_id = $4;', 
         [req.body.name, req.body.quantity, req.body.unit, req.body.id]
       );
-      res.json({ success: true });
+      return res.json({ success: true });
     } catch (err) {
       console.error('DB error:', err);
-      res.json({ success: false, message: "Database query failed"});
+      return res.json({ success: false, message: "Database query failed"});
     }
   }
   res.redirect('/manager');
@@ -826,10 +826,10 @@ app.post('/manager/inventory/add', async (req, res) => {
       await pool.query('INSERT INTO ingredients (ingredient_name, quantity, minimum_quantity, full_quantity, ingredient_unit) VALUES ($1, $2, $3, $4, $5);', 
         [req.body.name, req.body.quantity, restockAmount, fullAmount, req.body.unit]
       );
-      res.json({ success: true });
+      return res.json({ success: true });
     } catch (err) {
       console.error('DB error:', err);
-      res.json({ success: false, message: "Database query failed"});
+      return res.json({ success: false, message: "Database query failed"});
     }
   }
   res.redirect('/manager');
@@ -877,7 +877,7 @@ app.get('/manager/xreport', async (req, res) => {
     }
     catch (err) {
       console.error('DB error:', err);
-      res.status(500).send('Database query failed');
+      return res.status(500).send('Database query failed');
     }
   }
   res.redirect('/manager');
@@ -891,7 +891,7 @@ app.get('/manager/restock', async (req, res) => {
       return res.render('manager/restock', { user: req.user, data: rows });
     } catch (err) {
       console.error('DB error:', err);
-      res.status(500).send('Database query failed');
+      return res.status(500).send('Database query failed');
     }
   }
   res.redirect('/manager');
@@ -935,7 +935,7 @@ app.get('/manager/zreport', async (req, res) => {
       
     } catch (err) {
       console.error('DB error:', err);
-      res.status(500).send('Database query failed');
+      return res.status(500).send('Database query failed');
     }
   }
   res.redirect('/manager');
@@ -945,10 +945,10 @@ app.post('/manager/restock/update', async (req, res) => {
   if (req.isAuthenticated() && req.user.role === 'Manager') {
     try {
       await pool.query('UPDATE ingredients SET quantity = full_quantity WHERE (quantity <= minimum_quantity) AND (full_quantity > 0);');
-      res.json({ success: true });
+      return res.json({ success: true });
     } catch (err) {
       console.error('DB error:', err);
-      res.json({ success: false, message: "Database query failed"});
+      return res.json({ success: false, message: "Database query failed"});
     }
   }
   res.redirect('/manager');
@@ -962,7 +962,7 @@ app.get('/manager/employees', async (req, res) => {
       return res.render('manager/employeeReport', { user: req.user, data: rows });
     } catch (err) {
       console.error('DB error:', err);
-      res.status(500).send('Database query failed');
+      return res.status(500).send('Database query failed');
     }
   }
   res.redirect('/manager');
