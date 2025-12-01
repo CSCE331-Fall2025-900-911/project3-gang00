@@ -577,11 +577,47 @@ app.post('/checkout', async (req, res) => {
     const order_id = orderRes.rows[0].order_id;
 
     // Loop through each item (products + add-ons)
+    let previousItemID = null;
+    let previousOrderItemID = null;
     for (const item of orderItems) {
       const { productId, productPrice, item_count = 1, isAddon = false } = item;
 
       if (isAddon) {
+
+        if (previousItemID !== null && previousOrderItemID !== null) {
+          const addonResult = await client.query(
+            `SELECT addon_name FROM addons
+            WHERE addon_id = $1;`, [productId]
+          );
+
+          const prevResult = await client.query(
+            `SELECT addon_string FROM orderitems
+            WHERE order_item_id = $1`, [previousOrderItemID]
+          );
+
+          // extracting text values
+          const addonName = addonResult.rows[0].addon_name;
+          let prevString = prevResult.rows[0].addon_string;
+          if (!prevString) prevString = "";
+
+          // add addon_name to addon string for orderitem
+          let newAddonString;
+          if (prevString === "") {
+            newAddonString = addonName;
+          } else {
+            newAddonString = prevString + ", " + addonName;
+          }
+
+          await client.query(
+            `UPDATE orderitems
+            SET addon_string = $1
+            WHERE order_item_id = $2`,
+            [newAddonString, previousOrderItemID]
+          );
+        }
         continue;
+      } else {
+        previousItemID = productId;
       }
 
       if (!productId || isNaN(productPrice)) {
@@ -609,11 +645,12 @@ app.post('/checkout', async (req, res) => {
       }
 
       // Insert item into orderitems
-      await client.query(
+      const orderItemResult = await client.query(
         `INSERT INTO orderitems (order_id, product_id, qty, item_price)
-         VALUES ($1, $2, $3, $4);`,
+         VALUES ($1, $2, $3, $4) RETURNING order_item_id;`,
         [order_id, productId, item_count, productPrice]
       );
+      previousOrderItemID = orderItemResult.rows[0].order_item_id;
 
       //update user points if user exists
       if(req.isAuthenticated() && req.user.customer_id != undefined){
@@ -640,6 +677,45 @@ app.post('/checkout', async (req, res) => {
   } finally {
     client.release();
   }
+});
+
+// -------- Kitchen Routes -------- //
+app.get('/employee/kitchen', async (req, res) => {
+  if (req.isAuthenticated() && req.user.employee_id !== undefined) {
+    try {
+      // In the future pull from orders table
+      const { rows: orders } = await pool.query('SELECT * FROM orders WHERE isCompleted = FALSE ORDER BY date_time ASC;');
+      
+      for (const order of orders) {
+        const { rows: orderItems } = await pool.query(
+          `SELECT p.product_name, oi.addon_string FROM orderitems oi
+          JOIN products p ON oi.product_id = p.product_id
+          WHERE order_id = $1`, [order.order_id]
+        );
+        order.items = orderItems || [];
+      }
+
+      return res.render('kitchen', { incompleteOrders: orders, user: req.user });
+    } catch (err) {
+      console.error('DB error:', err);
+      return res.status(500).send('Database query failed');
+    }
+  }
+  res.redirect('/employee');
+});
+
+app.post('/employee/kitchen/complete-order', async (req, res) => {
+  if (req.isAuthenticated() && req.user.employee_id !== undefined) {
+    const order_id = req.body.order_id;
+    try {
+      await pool.query('UPDATE orders SET isCompleted = TRUE WHERE order_id = $1', [order_id]);
+      return res.json({ success: true });
+    } catch (err) {
+      console.error('DB error:', err);
+      return res.status(500).send('Database query failed');
+    }
+  }
+  result.redirect('/employee/kitchen');
 });
 
 // -------- Translation setup (unused but harmless) --------
@@ -783,7 +859,7 @@ app.get('/manager/inventory', async (req, res) => {
       return res.render('manager/inventory', { user: req.user, data: rows });
     } catch (err) {
       console.error('DB error:', err);
-      res.status(500).send('Database query failed');
+      return res.status(500).send('Database query failed');
     }
   }
   res.redirect('/manager');
@@ -797,7 +873,7 @@ app.get('/manager/inbox', async (req, res) => {
       return res.render('manager/inbox', { user: req.user, data: rows });
     } catch (err) {
       console.error('DB error:', err);
-      res.status(500).send('Database query failed');
+      return res.status(500).send('Database query failed');
     }
   }
   res.redirect('/manager');
@@ -809,10 +885,10 @@ app.post('/manager/inventory/update', async (req, res) => {
       await pool.query('UPDATE ingredients SET ingredient_name = $1, quantity = $2, ingredient_unit = $3 WHERE ingredient_id = $4;', 
         [req.body.name, req.body.quantity, req.body.unit, req.body.id]
       );
-      res.json({ success: true });
+      return res.json({ success: true });
     } catch (err) {
       console.error('DB error:', err);
-      res.json({ success: false, message: "Database query failed"});
+      return res.json({ success: false, message: "Database query failed"});
     }
   }
   res.redirect('/manager');
@@ -826,10 +902,10 @@ app.post('/manager/inventory/add', async (req, res) => {
       await pool.query('INSERT INTO ingredients (ingredient_name, quantity, minimum_quantity, full_quantity, ingredient_unit) VALUES ($1, $2, $3, $4, $5);', 
         [req.body.name, req.body.quantity, restockAmount, fullAmount, req.body.unit]
       );
-      res.json({ success: true });
+      return res.json({ success: true });
     } catch (err) {
       console.error('DB error:', err);
-      res.json({ success: false, message: "Database query failed"});
+      return res.json({ success: false, message: "Database query failed"});
     }
   }
   res.redirect('/manager');
@@ -877,7 +953,7 @@ app.get('/manager/xreport', async (req, res) => {
     }
     catch (err) {
       console.error('DB error:', err);
-      res.status(500).send('Database query failed');
+      return res.status(500).send('Database query failed');
     }
   }
   res.redirect('/manager');
@@ -891,7 +967,7 @@ app.get('/manager/restock', async (req, res) => {
       return res.render('manager/restock', { user: req.user, data: rows });
     } catch (err) {
       console.error('DB error:', err);
-      res.status(500).send('Database query failed');
+      return res.status(500).send('Database query failed');
     }
   }
   res.redirect('/manager');
@@ -935,7 +1011,7 @@ app.get('/manager/zreport', async (req, res) => {
       
     } catch (err) {
       console.error('DB error:', err);
-      res.status(500).send('Database query failed');
+      return res.status(500).send('Database query failed');
     }
   }
   res.redirect('/manager');
@@ -945,10 +1021,10 @@ app.post('/manager/restock/update', async (req, res) => {
   if (req.isAuthenticated() && req.user.role === 'Manager') {
     try {
       await pool.query('UPDATE ingredients SET quantity = full_quantity WHERE (quantity <= minimum_quantity) AND (full_quantity > 0);');
-      res.json({ success: true });
+      return res.json({ success: true });
     } catch (err) {
       console.error('DB error:', err);
-      res.json({ success: false, message: "Database query failed"});
+      return res.json({ success: false, message: "Database query failed"});
     }
   }
   res.redirect('/manager');
@@ -962,7 +1038,7 @@ app.get('/manager/employees', async (req, res) => {
       return res.render('manager/employeeReport', { user: req.user, data: rows });
     } catch (err) {
       console.error('DB error:', err);
-      res.status(500).send('Database query failed');
+      return res.status(500).send('Database query failed');
     }
   }
   res.redirect('/manager');

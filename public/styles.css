@@ -704,6 +704,9 @@ input:focus{
 }
 .card h3 { margin:0 0 10px; font-size:1.1rem; color:black; }
 .card p { margin:0; color:#9aa7b3; font-size:0.95rem; }
+.card ul {
+  text-align: left;
+}
 
 /* Inventory */
 .left, .right {
