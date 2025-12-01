@@ -577,11 +577,47 @@ app.post('/checkout', async (req, res) => {
     const order_id = orderRes.rows[0].order_id;
 
     // Loop through each item (products + add-ons)
+    let previousItemID = null;
+    let previousOrderItemID = null;
     for (const item of orderItems) {
       const { productId, productPrice, item_count = 1, isAddon = false } = item;
 
       if (isAddon) {
+
+        if (previousItemID !== null && previousOrderItemID !== null) {
+          const addonResult = await client.query(
+            `SELECT addon_name FROM addons
+            WHERE addon_id = $1;`, [productId]
+          );
+
+          const prevResult = await client.query(
+            `SELECT addon_string FROM orderitems
+            WHERE order_item_id = $1`, [previousOrderItemID]
+          );
+
+          // extracting text values
+          const addonName = addonResult.rows[0].addon_name;
+          let prevString = prevResult.rows[0].addon_string;
+          if (!prevString) prevString = "";
+
+          // add addon_name to addon string for orderitem
+          let newAddonString;
+          if (prevString === "") {
+            newAddonString = addonName;
+          } else {
+            newAddonString = prevString + ", " + addonName;
+          }
+
+          await client.query(
+            `UPDATE orderitems
+            SET addon_string = $1
+            WHERE order_item_id = $2`,
+            [newAddonString, previousOrderItemID]
+          );
+        }
         continue;
+      } else {
+        previousItemID = productId;
       }
 
       if (!productId || isNaN(productPrice)) {
@@ -609,11 +645,12 @@ app.post('/checkout', async (req, res) => {
       }
 
       // Insert item into orderitems
-      await client.query(
+      const orderItemResult = await client.query(
         `INSERT INTO orderitems (order_id, product_id, qty, item_price)
-         VALUES ($1, $2, $3, $4);`,
+         VALUES ($1, $2, $3, $4) RETURNING order_item_id;`,
         [order_id, productId, item_count, productPrice]
       );
+      previousOrderItemID = orderItemResult.rows[0].order_item_id;
 
       //update user points if user exists
       if(req.isAuthenticated() && req.user.customer_id != undefined){
@@ -640,6 +677,45 @@ app.post('/checkout', async (req, res) => {
   } finally {
     client.release();
   }
+});
+
+// -------- Kitchen Routes -------- //
+app.get('/employee/kitchen', async (req, res) => {
+  if (req.isAuthenticated() && req.user.employee_id !== undefined) {
+    try {
+      // In the future pull from orders table
+      const { rows: orders } = await pool.query('SELECT * FROM orders WHERE isCompleted = FALSE ORDER BY date_time ASC;');
+      
+      for (const order of orders) {
+        const { rows: orderItems } = await pool.query(
+          `SELECT p.product_name, oi.addon_string FROM orderitems oi
+          JOIN products p ON oi.product_id = p.product_id
+          WHERE order_id = $1`, [order.order_id]
+        );
+        order.items = orderItems || [];
+      }
+
+      return res.render('kitchen', { incompleteOrders: orders, user: req.user });
+    } catch (err) {
+      console.error('DB error:', err);
+      return res.status(500).send('Database query failed');
+    }
+  }
+  res.redirect('/employee');
+});
+
+app.post('/employee/kitchen/complete-order', async (req, res) => {
+  if (req.isAuthenticated() && req.user.employee_id !== undefined) {
+    const order_id = req.body.order_id;
+    try {
+      await pool.query('UPDATE orders SET isCompleted = TRUE WHERE order_id = $1', [order_id]);
+      return res.json({ success: true });
+    } catch (err) {
+      console.error('DB error:', err);
+      return res.status(500).send('Database query failed');
+    }
+  }
+  result.redirect('/employee/kitchen');
 });
 
 // -------- Translation setup (unused but harmless) --------
