@@ -8,12 +8,8 @@
 </head>
 <body>
     <nav class="navbar" style="padding: 10px 10px;">
-        <div class="logo">
-            <a href="javascript:void(0)">
-                <img src="/ShareTea_logo.webp" alt="ShareTea Logo" class="logo-img">
-            </a>
-            <h1 style="font-size: 50px; font-weight: 500; margin-top: 10px;">Employees</h1>
-            
+        <div>
+            <h1 style="font-size: 50px; font-weight: 600; margin-left: 20px;">Employees</h1>
         </div>
         <ul class="nav-links">
             <li><a href="javacript:void(0)" onclick="goToManager()" style="display: flex; align-items: center; gap: 8px;"><img src="/accountant.png" style="height: 40px;">Managers</a></li>
@@ -72,8 +68,10 @@
     </div>
 
     <!-- Main body of page -->
-    <h1>Employee Page</h1>
-    <h2>Welcome, <%= user.employee_name %>!</h2>
+    <main class="center-container">
+        <a href="/employee/kitchen" class="menu-button">View Kitchen</a>
+        <a href="/employee/order" class="menu-button">Start Order</a>
+    </main>
     
     <script type="module" src="/langSelect.js"></script>
     <script src="/index.js"></script>
