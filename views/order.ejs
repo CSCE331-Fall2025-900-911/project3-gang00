@@ -4,7 +4,11 @@
     <title>Order</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
     <script>
+        const userPoints = <%= user.points %>;
+        let currentUserPoints = userPoints;
+
         function addToOrder(productId, productName, productPrice, isAddon = false) {
             const orderList = document.getElementById('order-list');
 
@@ -114,6 +118,10 @@
 
             //calculate points added
             let points = Math.round(total) * 100;
+            let totalToPoints = total * 1000;
+
+            document.getElementById("confirm-totalToPoints").textContent = totalToPoints.toFixed(2);
+            document.getElementById("confirm-points").textContent = currentUserPoints;
 
             // Confirm button
             document.getElementById("confirmYes").onclick = async () => {
@@ -143,11 +151,18 @@
                 }
             };
 
+            //Show 
+
             // Cancel button closes modal
             document.getElementById("confirmNo").onclick = () => {
                 document.getElementById("confirmModal").classList.add("hidden");
             };
+
+            document.getElementById("confirmPoints").onclick = () => {
+                openPointsModal(total);
+            };
         }
+
 
 
         function showAddons(productId, productName, productPrice) {
@@ -210,6 +225,53 @@
                 addToOrder(productId, productName, productPrice);
             }
         }
+
+        //function to show points modal for users
+        let pointsToRedeem = 0; 
+        const POINTS_PER_DOLLAR = 100;
+
+        function openPointsModal(orderTotal) {
+            const maxDiscountDollars = Math.min(orderTotal, currentUserPoints / POINTS_PER_DOLLAR);
+
+            const pointsToUse = Math.floor(maxDiscountDollars * POINTS_PER_DOLLAR);
+            const discount = pointsToUse / POINTS_PER_DOLLAR;
+            newTotal = (orderTotal - discount).toFixed(2);
+            const remainingPoints = currentUserPoints - pointsToUse;
+            newTotal = clampMoney(newTotal);
+
+            // Fill modal text
+            document.getElementById("points-order-total").textContent = orderTotal.toFixed(2);
+            document.getElementById("points-current").textContent = currentUserPoints;
+            document.getElementById("points-used").textContent = pointsToUse;
+            document.getElementById("points-new-total").textContent = newTotal;
+            document.getElementById("points-remaining").textContent = remainingPoints;
+
+            pointsToRedeem = pointsToUse;
+
+            document.getElementById("pointsModal").classList.remove("hidden");
+
+            document.getElementById("pointsConfirmYes").onclick = () => {
+                currentUserPoints = remainingPoints;
+                document.getElementById("pointsModal").classList.add("hidden");
+                document.getElementById("confirm-total").textContent = newTotal;
+                document.getElementById("confirm-points").textContent = currentUserPoints;
+                document.getElementById("total").textContent = newTotal;
+            };
+
+            document.getElementById("pointsConfirmNo").onclick = () => {
+                document.getElementById("pointsModal").classList.add("hidden");
+                pointsToRedeem = 0;  
+            };
+        }
+
+        //help prevent total from being 0.01 when it should be 0
+        function clampMoney(value) {
+            const num = Number(value) || 0;     
+            if (num < 0.05) return 0.00;             
+            return Math.round(num * 100) / 100;
+        }
+
+
 
 
         // Load order data on page load
@@ -309,11 +371,31 @@
             <p>Subtotal: $<span id="confirm-subtotal">0.00</span></p>
             <p>Tax: $<span id="confirm-tax">0.00</span></p>
             <p>Total: $<span id="confirm-total">0.00</span></p>
+            <p>Total converted to points: <span id="confirm-totalToPoints">0.00</span></p>
+            <p>Your points <span id="confirm-points">0.00</span></p>
             <div class="modal-order-buttons">
                 <button id="confirmYes">Confirm</button>
                 <button id="confirmNo">Cancel</button>
+                <button id="confirmPoints"> Use Points </button>
             </div>
         </div>
     </div>
+
+    <div id="pointsModal" class="modal-order hidden">
+        <div class="modal-order-content">
+            <h2>Use Points?</h2>
+            <p>Order total: $<span id="points-order-total">0.00</span></p>
+            <p>Your current points: <span id="points-current">0</span></p>
+            <p>Points to use: <span id="points-used">0</span></p>
+            <p>New total after points: $<span id="points-new-total">0.00</span></p>
+            <p>Points remaining: <span id="points-remaining">0</span></p>
+
+            <div class="modal-order-buttons">
+            <button id="pointsConfirmYes">Apply Points</button>
+            <button id="pointsConfirmNo">Cancel</button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
