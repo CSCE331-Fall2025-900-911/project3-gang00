@@ -791,6 +791,41 @@ app.post('/manager/restock/update', async (req, res) => {
   }
 });
 
+app.get('/manager/salesReport', async (req, res) => {
+  if (!req.isAuthenticated() || req.user.role !== 'Manager') {
+    return res.redirect('/manager');
+  }
+
+  const { startDate, endDate } = req.query;
+
+  // If no dates, just load the page normally
+  if (!startDate || !endDate) {
+    return res.render('manager/salesReport', { data: [] });
+  }
+
+  try {
+    const { rows } = await pool.query(
+      `SELECT
+            p.product_id AS id,
+            p.product_name AS name,
+            COALESCE(SUM(oi.qty), 0) AS qty_sold
+        FROM orders o
+        JOIN orderItems oi ON oi.order_id = o.order_id
+        JOIN products p ON p.product_id = oi.product_id
+        WHERE o.date_time >= $1 AND o.date_time <= $2
+        GROUP BY p.product_id, p.product_name
+        ORDER BY qty_sold DESC, p.product_name;`,
+      [startDate, endDate]
+    );
+
+    return res.json({ data: rows });
+
+  } catch (err) {
+    console.error("DB error:", err);
+    return res.json({ success: false, message: "Database query failed" });
+  }
+});
+
 
 // ---- Start Server ----
 app.listen(port, () => {

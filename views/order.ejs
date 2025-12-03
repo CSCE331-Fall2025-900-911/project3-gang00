@@ -7,66 +7,89 @@
     <script>
         function addToOrder(productId, productName, productPrice, isAddon = false) {
             const orderList = document.getElementById('order-list');
+            const orderData = JSON.parse(localStorage.getItem('orderData')) || { items: [], subtotal: 0 };
 
-            const orderItem = document.createElement('li');
-            orderItem.textContent = `${productName} - $${productPrice.toFixed(2)}`;
+            // Add item to data
+            const newItem = { productId, productName, productPrice, isAddon };
+            orderData.items.push(newItem);
+            orderData.subtotal += productPrice;
+            localStorage.setItem('orderData', JSON.stringify(orderData));
+
+            // Create list element
+            const li = document.createElement('li');
+            li.classList.add("order-item");
 
             if (isAddon) {
-                orderItem.style.marginLeft = '20px'; // Indent for sub-items
-                orderItem.style.fontSize = '0.9em'; // Smaller font for add-ons
+                li.style.marginLeft = "20px";
+                li.style.fontSize = "0.9em";
             }
 
-            orderList.appendChild(orderItem);
+            li.innerHTML = `
+                ${productName} - $${productPrice.toFixed(2)}
+                <button class="remove-item" onclick="removeItem(${orderData.items.length - 1})">X</button>
+            `;
 
-            const subtotalElement = document.getElementById('subtotal');
-            const taxElement = document.getElementById('tax');
-            const totalElement = document.getElementById('total');
-
-            const currentSubtotal = parseFloat(subtotalElement.textContent);
-            const newSubtotal = currentSubtotal + productPrice;
-            const tax = newSubtotal * 0.0825;
-            const total = newSubtotal + tax;
-
-            subtotalElement.textContent = newSubtotal.toFixed(2);
-            taxElement.textContent = tax.toFixed(2);
-            totalElement.textContent = total.toFixed(2);
-
-            // Persist order data in localStorage
-            const orderData = JSON.parse(localStorage.getItem('orderData')) || { items: [], subtotal: 0 };
-            orderData.items.push({ productId, productName, productPrice, isAddon });
-            orderData.subtotal = newSubtotal;
-            localStorage.setItem('orderData', JSON.stringify(orderData));
+            orderList.appendChild(li);
+            updateTotals();
 
             
         }
 
+        function updateTotals() {
+            const orderData = JSON.parse(localStorage.getItem('orderData')) || { items: [], subtotal: 0 };
+
+            const subtotal = orderData.subtotal;
+            const tax = subtotal * 0.0825;
+            const total = subtotal + tax;
+
+            document.getElementById('subtotal').textContent = subtotal.toFixed(2);
+            document.getElementById('tax').textContent = tax.toFixed(2);
+            document.getElementById('total').textContent = total.toFixed(2);
+        }
+
+        function removeItem(index) {
+            let orderData = JSON.parse(localStorage.getItem('orderData'));
+            if (!orderData) return;
+
+            const removed = orderData.items[index];
+            orderData.subtotal -= removed.productPrice;
+
+            orderData.items.splice(index, 1);
+
+            localStorage.setItem('orderData', JSON.stringify(orderData));
+
+            renderOrderList();
+        }
+
+        function renderOrderList() {
+            const orderList = document.getElementById('order-list');
+            orderList.innerHTML = "";
+
+            const orderData = JSON.parse(localStorage.getItem('orderData')) || { items: [], subtotal: 0 };
+
+            orderData.items.forEach((item, index) => {
+                const li = document.createElement('li');
+                li.classList.add("order-item");
+
+                if (item.isAddon) {
+                    li.style.marginLeft = "20px";
+                    li.style.fontSize = "0.9em";
+                }
+
+                li.innerHTML = `
+                    ${item.productName} - $${item.productPrice.toFixed(2)}
+                    <button class="remove-item" onclick="removeItem(${index})">X</button>
+                `;
+
+                orderList.appendChild(li);
+            });
+
+            updateTotals();
+        }
+
+
         function loadOrder() {
-            const orderData = JSON.parse(localStorage.getItem('orderData'));
-            if (orderData) {
-                const orderList = document.getElementById('order-list');
-                const subtotalElement = document.getElementById('subtotal');
-                const taxElement = document.getElementById('tax');
-                const totalElement = document.getElementById('total');
-
-                orderData.items.forEach(item => {
-                    const orderItem = document.createElement('li');
-                    orderItem.textContent = `${item.productName} - $${item.productPrice.toFixed(2)}`;
-
-                    if (item.isAddon) {
-                        orderItem.style.marginLeft = '20px'; // Indent for sub-items
-                        orderItem.style.fontSize = '0.9em'; // Smaller font for add-ons
-                    }
-
-                    orderList.appendChild(orderItem);
-                });
-
-                const tax = orderData.subtotal * 0.0825;
-                const total = orderData.subtotal + tax;
-
-                subtotalElement.textContent = orderData.subtotal.toFixed(2);
-                taxElement.textContent = tax.toFixed(2);
-                totalElement.textContent = total.toFixed(2);
-            }
+            renderOrderList();
         }
 
         function clearOrder() {
@@ -172,28 +195,46 @@
 
 
         function addProductWithAddons(productId) {
-           const selectedProduct = JSON.parse(localStorage.getItem('selectedProduct'));
-            if (selectedProduct) {
-                addToOrder(selectedProduct.id, selectedProduct.name, selectedProduct.price);
-            }
-            if (!selectedProduct) {
-                addToOrder(productId, productName, productPrice);
+
+            // selectedProduct stored when addons panel is opened
+            const selectedProduct = JSON.parse(localStorage.getItem('selectedProduct'));
+            const product = selectedProduct && String(selectedProduct.id) === String(productId) ? selectedProduct : null;
+            if (!product) {
+                // fallback: sometimes we call addProductWithAddons without selectedProduct, abort safely
+                console.warn('No selectedProduct found for productId', productId);
+                return;
             }
 
+            const qtyInput = document.getElementById(`quantityInput-${productId}`);
+            const quantity = Math.max(1, parseInt(qtyInput?.value || '1', 10));
 
-            // Add selected add-ons
             const addonsSection = document.getElementById(`addons-section-${productId}`);
-            const selectedAddons = addonsSection.querySelectorAll('.addon-checkbox:checked');
-            selectedAddons.forEach(cb => {
-                const addonId = cb.dataset.id;
-                const addonName = cb.dataset.name;
-                const addonPrice = parseFloat(cb.dataset.price);
-                addToOrder(addonId, addonName, addonPrice, true);
-                cb.checked = false; // clear checkbox
-            });
+            const selectedAddons = Array.from(addonsSection.querySelectorAll('.addon-checkbox:checked'));
 
-            showAddons(productId); // Collapse the add-ons section after adding to order
-            
+            // Add product + addons for each quantity unit
+            for (let i = 0; i < quantity; i++) {
+                // add main product
+                addToOrder(product.id, product.name, product.price, false);
+
+                // add selected add-ons (all of them)
+                selectedAddons.forEach(cb => {
+                    const addonId = cb.dataset.id;
+                    const addonName = cb.dataset.name;
+                    const addonPrice = parseFloat(cb.dataset.price);
+                    addToOrder(addonId, addonName, addonPrice, true);
+                });
+            }
+
+            // Clear checkboxes only AFTER loop
+            selectedAddons.forEach(cb => cb.checked = false);
+
+            // Reset quantity input to 1
+            if (qtyInput) qtyInput.value = 1;
+
+            // Collapse the panel
+            addonsSection.classList.remove('show');
+            localStorage.removeItem('selectedProduct');
+
         }
 
         function handleAddToOrder(productId, productName, productPrice) {
@@ -253,8 +294,8 @@
                             <% selectedGroup.products.forEach((product) => { %>
                                 <li>
                                     <strong><%= product.name %></strong> - $<%= product.price %>
-                                    <button onclick="showAddons('<%= product.id %>', '<%= product.name %>', <%= product.price %>)">Select Add-ons</button>
-                                    <button onclick="handleAddToOrder('<%= product.id %>', '<%= product.name %>', <%= product.price %>)">Add to Order</button>
+                                    <button class="orderButtons" onclick="showAddons('<%= product.id %>', '<%= product.name %>', <%= product.price %>)">Select Add-ons</button>
+                                    <button class="orderButtons" onclick="handleAddToOrder('<%= product.id %>', '<%= product.name %>', <%= product.price %>)">Add to Order</button>
                                     <div id="addons-section-<%= product.id %>" class="addons-container">  
                                         <h2>Select Add-ons</h2>
                                         <ul>
@@ -266,8 +307,12 @@
                                                 </li>
                                                 
                                             <% }); %>
-                                        </ul>
-                                        <button onclick="addProductWithAddons('<%= product.id %>')">Add to Order</button>
+                                            </ul>
+                                        <div class="quantitySelector">
+                                            <label for="quantityInput-<%= product.id %>">Quantity:</label>
+                                            <input type="number" id="quantityInput-<%= product.id %>" min="1" value="1" style="width:70px;">
+                                        </div>
+                                        <button class="orderButtons" onclick="addProductWithAddons('<%= product.id %>')">Add to Order</button>
                                     </div>
                                     
                                 </li>

@@ -379,7 +379,7 @@ input:focus{
     position: fixed;
     top: 0;
     right: 0;
-    width: 300px;                 /* adjust width as needed */
+    width: 400px;                 /* adjust width as needed */
     height: 100vh;                /* full viewport height */
     background-color: #fff;
     border-left: 2px solid #ddd;
@@ -818,4 +818,36 @@ input[type="unit"]{
   width: 70%;
   box-shadow:0 4px 12px rgba(0,0,0,0.4);
   align-self: center;
+}
+
+.orderButtons {
+  margin-top: 20px;
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+  background-color: #ffdddd;
+  color: black;
+  text-decoration: none;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+  border: none;
+}
+
+.orderButtons:hover {
+  background-color: #ffbbbb; /* hover effect */
+  border-radius: 5px;
+}
+
+.remove-item {
+    margin-left: 10px;
+    padding: 2px 6px;
+    background-color: #ffdddd;
+    border: none;
+    color: rgb(0, 0, 0);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8em;
+}
+
+.remove-item:hover {
+    background-color: #ffbbbb;
 }

@@ -5,3 +5,7 @@ function goToInventory() {
 function goToRestock() {
     window.location.href = "/manager/restock";
 }
+
+function goToSalesReport() {
+    window.location.href = "/manager/salesReport";
+}
