@@ -6,7 +6,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     
     <script>
-        const userPoints = <%= user.points %>;
+        const userIsLoggedIn = <%= user ? 'true' : 'false' %>;
+        const userPoints = <%= user ? user.points : 0 %>;
         let currentUserPoints = userPoints;
 
         function addToOrder(productId, productName, productPrice, isAddon = false) {
@@ -371,7 +372,7 @@
             <p>Subtotal: $<span id="confirm-subtotal">0.00</span></p>
             <p>Tax: $<span id="confirm-tax">0.00</span></p>
             <p>Total: $<span id="confirm-total">0.00</span></p>
-            <p>Total converted to points: <span id="confirm-totalToPoints">0.00</span></p>
+            <p>Your total costs this many points: <span id="confirm-totalToPoints">0.00</span></p>
             <p>Your points <span id="confirm-points">0.00</span></p>
             <div class="modal-order-buttons">
                 <button id="confirmYes">Confirm</button>
