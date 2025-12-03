@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sales Report</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+</head>
+<body>
+    <!-- NAVBAR -->
+    <nav id="navbar" class="navbar" style="padding: 10px 10px; height: 100px;">
+        <div style="display: flex; flex-direction: row; align-items: center;">
+            <a href="/manager" style="margin-left: 10px; margin-right: 20px;"><img src="/img/management/arrow-left.png" class="back-arrow"></a>
+            <div>
+                <p1 style="font-weight: 500;">Managers</p1>
+                <h1 style="font-size: 50px; font-weight: 600; margin-top: -7px;">Sales Report</h1>
+            </div>
+        </div>
+    </nav>
+
+    <!-- MAIN LAYOUT -->
+    <div style="display: flex; width: 100%; justify-content: space-between; padding: 20px; gap: 20px;">
+
+        <!-- LEFT: CHART BY DATE RANGE -->
+        <div style="width: 100%; text-align: center;">
+            <h2>Units Sold by Date Range</h2>
+
+            <label>Start Date:</label>
+            <input type="date" id="startDate">
+
+            <label>End Date:</label>
+            <input type="date" id="endDate">
+
+            <button id="loadDateReportBtn">Load Report</button>
+
+            <canvas id="dateRangeChart" style="margin-top: 20px;"></canvas>
+        </div>
+
+        <!-- RIGHT: TABLE RESULTS FOR TIME RANGE -->
+        <!--
+        <div style="width: 50%; text-align: center;">
+            <h2>Units Sold Today by Time Range</h2>
+
+            <label>Start Time:</label>
+            <input type="time" id="startTime">
+
+            <label>End Time:</label>
+            <input type="time" id="endTime">
+
+            <button id="loadTimeReportBtn">Load Time Report</button>
+
+            <table id="timeSalesTable" style="width: 90%; margin: 20px auto; border-collapse: collapse;">
+                <thead>
+                    <tr style="background-color: #f0f0f0;">
+                        <th style="padding: 10px; border: 1px solid #ccc;">Product Name</th>
+                        <th style="padding: 10px; border: 1px solid #ccc;">Units Sold</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+            -->
+    </div>
+
+    <!-- CHART.JS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        let dateRangeChart = null;
+
+        // LOAD REPORT BASED ON DATE RANGE
+        async function loadDateRangeReport() {
+            const startDate = document.getElementById("startDate").value;
+            const endDate = document.getElementById("endDate").value;
+
+            if (!startDate || !endDate) {
+                alert("Please select both dates");
+                return;
+            }
+
+            const response = await fetch(`/manager/salesReport?startDate=${startDate}&endDate=${endDate}`);
+            const result = await response.json();
+            const rows = result.data;
+
+            const labels = rows.map(r => r.name);
+            const values = rows.map(r => r.qty_sold);
+
+            if (dateRangeChart) dateRangeChart.destroy();
+
+            dateRangeChart = new Chart(document.getElementById("dateRangeChart"), {
+                type: "bar",
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: "Units Sold",
+                            data: values
+                        }
+                    ]
+                }
+            });
+        }
+
+        /*
+        // LOAD TIME RANGE RESULTS INTO TABLE
+        async function loadTimeRangeReport() {
+            const startTime = document.getElementById("startTime").value;
+            const endTime = document.getElementById("endTime").value;
+
+            if (!startTime || !endTime) {
+                alert("Please select both times");
+                return;
+            }
+
+            const response = await fetch(`/manager/salesReport/time?startTime=${startTime}&endTime=${endTime}`);
+            const result = await response.json();
+            const rows = result.data;
+
+            const tbody = document.querySelector("#timeSalesTable tbody");
+            tbody.innerHTML = "";
+
+            rows.forEach(r => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td style="padding: 10px; border: 1px solid #ccc;">${r.name}</td>
+                    <td style="padding: 10px; border: 1px solid #ccc;">${r.qty_sold}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+            */
+
+        // BUTTON LISTENERS
+        document.getElementById("loadDateReportBtn").addEventListener("click", loadDateRangeReport);
+        // document.getElementById("loadTimeReportBtn").addEventListener("click", loadTimeRangeReport);
+    </script>
+
+    <script type="module" src="/langSelect.js"></script>
+    <script src="/index.js"></script>
+</body>
+</html>
