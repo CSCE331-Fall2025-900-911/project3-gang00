@@ -7,7 +7,7 @@
     
     <script>
         const userIsLoggedIn = <%= user ? 'true' : 'false' %>;
-        const userPoints = <%= user ? user.points : 0 %>;
+        const userPoints = <%= user ? (user && typeof user.points === 'number') ? user.points : 0 : 0 %>;
         let currentUserPoints = userPoints;
 
         function addToOrder(productId, productName, productPrice, isAddon = false) {
@@ -191,13 +191,12 @@
         }
 
 
-        function addProductWithAddons(productId) {
+        function addProductWithAddons(productId, fallbackName, fallbackPrice) {
            const selectedProduct = JSON.parse(localStorage.getItem('selectedProduct'));
             if (selectedProduct) {
                 addToOrder(selectedProduct.id, selectedProduct.name, selectedProduct.price);
-            }
-            if (!selectedProduct) {
-                addToOrder(productId, productName, productPrice);
+            } else {
+                addToOrder(productId, fallbackName, fallbackPrice);
             }
 
 
@@ -236,7 +235,7 @@
 
             const pointsToUse = Math.floor(maxDiscountDollars * POINTS_PER_DOLLAR);
             const discount = pointsToUse / POINTS_PER_DOLLAR;
-            newTotal = (orderTotal - discount).toFixed(2);
+            let newTotal = (orderTotal - discount).toFixed(2);
             const remainingPoints = currentUserPoints - pointsToUse;
             newTotal = clampMoney(newTotal);
 
