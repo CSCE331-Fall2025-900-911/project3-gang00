@@ -59,6 +59,7 @@
                     if (item.isAddon) {
                         orderItem.style.marginLeft = '20px'; // Indent for sub-items
                         orderItem.style.fontSize = '0.9em'; // Smaller font for add-ons
+                        orderItem.style.listStyleType = "circle";
                     }
 
                     orderList.appendChild(orderItem);
@@ -101,6 +102,7 @@
                 if (item.isAddon) {
                     li.style.marginLeft = "20px";
                     li.style.fontSize = "0.9em";
+                    li.style.listStyleType = "circle";
                 }
                 confirmList.appendChild(li);
             });
@@ -124,7 +126,10 @@
             document.getElementById("confirm-points").textContent = currentUserPoints;
 
             // Confirm button
-            document.getElementById("confirmYes").onclick = async () => {
+            document.getElementById("confirmYes").onclick = async (e) => {
+                e.preventDefault();
+                const email = document.getElementById("emailField").value;
+
                 try {
                     const res = await fetch('/checkout', {
                         method: 'POST',
@@ -132,7 +137,8 @@
                         body: JSON.stringify({
                             orderItems: orderData.items,
                             subtotal: orderData.subtotal,
-                            points: points
+                            points: points,
+                            email: email
                         })
                     });
 
@@ -350,8 +356,8 @@
         <!-- Order Summary -->
          <div class="order-summary">
             <h2>Order Summary</h2>
-            <ul id="order-list"></ul>
-            <p>Subtotal: $<span id="subtotal">0.00</span></p>
+            <ul id="order-list" style="list-style-position: inside;"></ul>
+            <p style="margin-top: 20px;">Subtotal: $<span id="subtotal">0.00</span></p>
             <p>Tax (8.25%): $<span id="tax">0.00</span></p>
             <p>Total: $<span id="total">0.00</span></p>
             <button class="checkout"onclick="checkoutOrder()">Checkout</button>
@@ -366,17 +372,28 @@
     <div id="confirmModal" class="modal-order hidden">
         <div class="modal-order-content">
             <h2>Confirm Your Order</h2>
-            <ul id="confirm-order-list"></ul>
-            <p>Subtotal: $<span id="confirm-subtotal">0.00</span></p>
+            <ul id="confirm-order-list" style="list-style-position: inside;  text-align: left; margin-top: 10px;"></ul>
+            <p style="margin-top: 20px;">Subtotal: $<span id="confirm-subtotal">0.00</span></p>
             <p>Tax: $<span id="confirm-tax">0.00</span></p>
-            <p>Total: $<span id="confirm-total">0.00</span></p>
+            <p style="font-weight: 700;">Total: $<span id="confirm-total">0.00</span></p>
             <p>Total converted to points: <span id="confirm-totalToPoints">0.00</span></p>
             <p>Your points <span id="confirm-points">0.00</span></p>
-            <div class="modal-order-buttons">
-                <button id="confirmYes">Confirm</button>
-                <button id="confirmNo">Cancel</button>
-                <button id="confirmPoints"> Use Points </button>
-            </div>
+
+            <form class="form" style="margin-top: 20px;" novalidate>
+                <% if (user) { %>
+                    <label for="email" class="visually-hidden" style="margin-bottom: -10px; margin-left: 10px; text-align: left;">Email (to recieve reciept):</label>
+                    <input id="emailField" name="email" type="email" placeholder="Email" value="<%- user.email %>" />
+                <% } else { %>
+                    <label for="email" class="visually-hidden" style="margin-bottom: -10px; margin-left: 10px; text-align: left;">Email  (to recieve reciept):</label>
+                    <input id="emailField" name="email" type="email" placeholder="Email" />
+                <% } %>
+                    
+                <div class="modal-order-buttons">
+                    <button id="confirmYes" type="button" style="padding: 8px 16px; border: none; background: #d9534f; color: white; border-radius: 6px; cursor: pointer;">Confirm</button>
+                    <button id="confirmNo" type="button" style="padding: 8px 16px; border: 1px solid #ccc; background: white; border-radius: 6px; cursor: pointer;">Cancel</button>
+                    <button id="confirmPoints"> Use Points </button>
+                </div>
+            </form>
         </div>
     </div>
 
