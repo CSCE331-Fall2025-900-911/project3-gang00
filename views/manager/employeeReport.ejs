@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<head>
+    <title>ShareTea Employee Reports</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav id="navbar" class="navbar">
+        <div style="display: flex; flex-direction: row; align-items: center;">
+            <a href="/manager" style="margin-left: 10px; margin-right: 20px;"><img src="/img/management/arrow-left.png" class="back-arrow"></a>
+            <div>
+                <p1 style="font-weight: 500;">Managers</p1>
+                <h1 style="font-size: 50px; font-weight: 600; margin-top: -15px;">Employees</h1>
+            </div>
+        </div>
+        <ul class="nav-links">
+            <li><a href="/manager/employee-sign-up" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: black;">
+                <img src="/img/management/add.png" style="height: 40px;">
+                Add new Employee
+            </a></li>
+
+            <li><a href="javascript:void(0)" onclick="openRemoveBox()" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: black;">
+                <img src="/img/management/remove.png" style="height: 40px;">
+                Remove Selected Employee
+            </a></li>
+        </ul>
+    </nav>
+
+    <!-- Modal backdrop -->
+    <div class="modal" id="remove-modal">
+        <!-- Modal box -->
+        <div id="modal-box">
+            <h3 style="margin-bottom: 16px;">Remove Employee</h3>
+
+            <p id="modal-id"></p>
+            <p id="modal-name"></p>
+            <p id="modal-role"></p>
+            <p id="modal-username"></p>
+
+
+            <p style="margin-top: 30px;">Are you sure you want to permanently remove this employee?</p>
+
+            
+
+            <div style="display: flex; justify-content: center; gap: 16px; margin-top: 20px;">
+                <button onclick="removeEmployee()" style="padding: 8px 16px; border: none; background: #d9534f; color: white; border-radius: 6px; cursor: pointer;">
+                    Remove
+                </button>
+                <button onclick="closeRemoveBox()" style="padding: 8px 16px; border: 1px solid #ccc; background: white; border-radius: 6px; cursor: pointer;">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <section>
+        <div class="left">
+            <div class="tableContainer">
+                <table class="myTable" id="myTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Employee Name</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Username</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% data.forEach(employee => { %>
+                            <tr>
+                                <td><%= employee.employee_id %></td>
+                                <td><%= employee.employee_name %></td>
+                                <td><%= employee.role %></td>
+                                <td><%= employee.status %></td>
+                                <td><%= employee.username %></td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <script type="module" src="/langSelect.js"></script>
+    <script src="/index.js"></script>
+    <script src="/employeeReport.js"></script>
+</body> 
