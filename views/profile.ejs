@@ -11,12 +11,119 @@
         <%- include('partials/kioskNavBar') %>
         <%- include('partials/logoutModal') %>
     </div>
-    <main>
-        <h1>View Profile:</h1>
-        <p1>Name: <%= user.customer_name %></p1>
-        <br>
-        <p1>Points: <%= user.points %></p1>
+
+    <%
+        const totalPoints = Number(user.points || 0);
+        const tiers = [
+            { name: 'Fresh Sip', min: 0, max: 499, perks: ['Free birthday drink', 'Early menu drops'] },
+            { name: 'Pearl Lover', min: 500, max: 1499, perks: ['2x points on Fridays', 'Exclusive merch drops'] },
+            { name: 'Brew Master', min: 1500, max: 2999, perks: ['Free toppings', 'Priority pickup lane'] },
+            { name: 'ShareTea VIP', min: 3000, max: Infinity, perks: ['Monthly surprise drink', 'Invites to tastings'] },
+        ];
+
+        let currentTier = tiers[tiers.length - 1];
+        let nextTier = null;
+
+        for (let i = 0; i < tiers.length; i++) {
+            const tier = tiers[i];
+            if (totalPoints <= tier.max || i === tiers.length - 1) {
+                currentTier = tier;
+                nextTier = tiers[i + 1] || null;
+                break;
+            }
+        }
+
+        const tierProgress = nextTier
+            ? Math.min(100, Math.round(((totalPoints - currentTier.min) / (nextTier.min - currentTier.min)) * 100))
+            : 100;
+        const pointsToNextTier = nextTier ? Math.max(0, nextTier.min - totalPoints) : 0;
+        const walletValue = (totalPoints / 100).toFixed(2);
+    %>
+
+    <main class="profile-layout">
+        <section class="profile-hero">
+            <div>
+                <p class="profile-eyebrow">Welcome back</p>
+                <h1><%= user.customer_name %></h1>
+                <p class="profile-subtitle">
+                    Thanks for being part of the ShareTea fam! Keep sipping to unlock more rewards and perks.
+                </p>
+            </div>
+            <div class="profile-badge">
+                <p>Total Points</p>
+                <strong><span data-points-counter><%= totalPoints %></span></strong>
+                <small>= $<%= walletValue %> in drink credit</small>
+            </div>
+        </section>
+
+        <section class="profile-grid">
+            <article class="profile-card">
+                <div class="profile-card__header">
+                    <div>
+                        <p class="profile-eyebrow">Tier Progress</p>
+                        <h2><%= currentTier.name %></h2>
+                    </div>
+                    <span class="profile-chip"><%= totalPoints %> pts</span>
+                </div>
+                <p>
+                    <% if (nextTier) { %>
+                        <strong><%= pointsToNextTier %> points</strong> until <%= nextTier.name %> status.
+                    <% } else { %>
+                        You’ve unlocked every reward available. Enjoy the VIP perks!
+                    <% } %>
+                </p>
+                <div class="points-progress" data-progress="<%= tierProgress %>">
+                    <div class="points-progress__bar" style="width:<%= tierProgress %>%"></div>
+                </div>
+                <p class="profile-hint">Earn 100 points for every dollar spent.</p>
+            </article>
+
+            <article class="profile-card">
+                <div class="profile-card__header">
+                    <div>
+                        <p class="profile-eyebrow">Perks</p>
+                        <h2>What you get</h2>
+                    </div>
+                </div>
+                <ul class="profile-perks">
+                    <% currentTier.perks.forEach(perk => { %>
+                        <li><span class="profile-perk-icon" aria-hidden="true">✓</span> <%= perk %></li>
+                    <% }); %>
+                </ul>
+                <p class="profile-hint">
+                    Rewards refresh every season—make sure notifications are on so you never miss a treat.
+                </p>
+            </article>
+
+            <article class="profile-card">
+                <div class="profile-card__header">
+                    <div>
+                        <p class="profile-eyebrow">Quick Actions</p>
+                        <h2>Keep earning</h2>
+                    </div>
+                </div>
+                <div class="profile-actions">
+                    <a href="/order" class="profile-action">Start a New Order</a>
+                    <a href="/menu" class="profile-action profile-action--secondary">Browse the Menu</a>
+                </div>
+                <p class="profile-hint">Ordering through the kiosk automatically applies your points.</p>
+            </article>
+
+            <article class="profile-card">
+                <div class="profile-card__header">
+                    <div>
+                        <p class="profile-eyebrow">Tips</p>
+                        <h2>Boost your balance</h2>
+                    </div>
+                </div>
+                <ul class="profile-perks">
+                    <li><span class="profile-perk-icon" aria-hidden="true">✓</span> Double points every Friday after 5 PM.</li>
+                    <li><span class="profile-perk-icon" aria-hidden="true">✓</span> Try seasonal features for surprise boosters.</li>
+                </ul>
+            </article>
+        </section>
     </main>
+
     <script type="module" src="/langSelect.js"></script>
     <script src="/profile.js"></script>
     <script src="/accountDropdown.js"></script>
