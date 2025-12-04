@@ -6,7 +6,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     
     <script>
-        const userPoints = <%= user.points %>;
+        const userPoints = <%= user ? user.points : 0 %>;
         let currentUserPoints = userPoints;
 
         function addToOrder(productId, productName, productPrice, isAddon = false) {
@@ -217,31 +217,6 @@
                 }
         }
 
-
-        // function addProductWithAddons(productId, fallbackName, fallbackPrice) {
-        //    const selectedProduct = JSON.parse(localStorage.getItem('selectedProduct'));
-        //     if (selectedProduct) {
-        //         addToOrder(selectedProduct.id, selectedProduct.name, selectedProduct.price);
-        //     } else {
-        //         addToOrder(productId, fallbackName, fallbackPrice);
-        //     }
-
-
-        //     // Add selected add-ons
-        //     const addonsSection = document.getElementById(`addons-section-${productId}`);
-        //     const selectedAddons = addonsSection.querySelectorAll('.addon-checkbox:checked');
-        //     selectedAddons.forEach(cb => {
-        //         const addonId = cb.dataset.id;
-        //         const addonName = cb.dataset.name;
-        //         const addonPrice = parseFloat(cb.dataset.price);
-        //         addToOrder(addonId, addonName, addonPrice, true);
-        //         cb.checked = false; // clear checkbox
-        //     });
-
-        //     showAddons(productId); // Collapse the add-ons section after adding to order
-            
-        // }
-
         function addProductWithAddons(productId) {
 
             // selectedProduct stored when addons panel is opened
@@ -385,29 +360,51 @@
                         <h2><%= selectedGroup.category %></h2>
                         <ul>
                             <% selectedGroup.products.forEach((product) => { %>
-                                <li>
-                                    <strong><%= product.name %></strong> - $<%= product.price %>
-                                    <button class="orderButtons" onclick="showAddons('<%= product.id %>', '<%= product.name %>', <%= product.price %>)">Select Add-ons</button>
-                                    <button class="orderButtons" onclick="handleAddToOrder('<%= product.id %>', '<%= product.name %>', <%= product.price %>)">Add to Order</button>
-                                    <div id="addons-section-<%= product.id %>" class="addons-container">  
-                                        <h2>Select Add-ons</h2>
-                                        <ul>
-                                            <% addons.forEach(addon => { %>
-                                                <li>
-                                                    <input type="checkbox" class="addon-checkbox" data-id="<%= addon.id %>" data-name="<%= addon.name %>" data-price="<%= addon.price %>">
-                                                    <strong><%= addon.name %></strong> - $<%= addon.price.toFixed(2) %>
-                                                    
-                                                </li>
-                                                
-                                            <% }); %>
-                                        </ul>
-                                        <div class="quantitySelector">
-                                            <label for="quantityInput-<%= product.id %>">Quantity:</label>
-                                            <input type="number" id="quantityInput-<%= product.id %>" min="1" value="1" style="width:70px;">
+                                <li class="product-item">
+                                    <img src="<%= product.image %>" alt="<%= product.name %>" class="product-image">
+
+                                    <div class="product-center">
+                                        <span class="product-name"><%= product.name %></span>
+                                        <span class="product-price">$<%= product.price %></span>
+
+                                        <div class="product-buttons">
+                                            <button class="orderButtons" 
+                                                    onclick="showAddons('<%= product.id %>', '<%= product.name %>', <%= product.price %>)">
+                                                Select Add-ons
+                                            </button>
+
+                                            <button class="orderButtons" 
+                                                    onclick="handleAddToOrder('<%= product.id %>', '<%= product.name %>', <%= product.price %>)">
+                                                Add to Order
+                                            </button>
                                         </div>
-                                        <button class="orderButtons" onclick="addProductWithAddons('<%= product.id %>')">Add to Order</button>
+
+                                        <!-- Add-ons Section -->
+                                        <div id="addons-section-<%= product.id %>" class="addons-container">
+                                            <h2>Select Add-ons</h2>
+                                            <ul>
+                                                <% addons.forEach(addon => { %>
+                                                    <li>
+                                                        <input type="checkbox" 
+                                                            class="addon-checkbox" 
+                                                            data-id="<%= addon.id %>" 
+                                                            data-name="<%= addon.name %>" 
+                                                            data-price="<%= addon.price %>">
+                                                        <strong><%= addon.name %></strong> - $<%= addon.price.toFixed(2) %>
+                                                    </li>
+                                                <% }); %>
+                                            </ul>
+
+                                            <div class="quantitySelector">
+                                                <label for="quantityInput-<%= product.id %>">Quantity:</label>
+                                                <input type="number" id="quantityInput-<%= product.id %>" min="1" value="1" style="width:70px;">
+                                            </div>
+
+                                            <button class="orderButtons" onclick="addProductWithAddons('<%= product.id %>')">
+                                                Add to Order
+                                            </button>
+                                        </div>
                                     </div>
-                                    
                                 </li>
                             <% }); %>
                         </ul>
@@ -417,7 +414,6 @@
                     <p>No products found for the selected category.</p>
                 <% } %>
             <% } %>
-            
         </div>
 
         <!-- Order Summary -->
@@ -458,7 +454,7 @@
                 <div class="modal-order-buttons">
                     <button id="confirmYes" type="button" style="padding: 8px 16px; border: none; background: #d9534f; color: white; border-radius: 6px; cursor: pointer;">Confirm</button>
                     <button id="confirmNo" type="button" style="padding: 8px 16px; border: 1px solid #ccc; background: white; border-radius: 6px; cursor: pointer;">Cancel</button>
-                    <button id="confirmPoints"> Use Points </button>
+                    <button id="confirmPoints" type="button" style="padding: 8px 16px; border: 1px solid #ccc; background: white; border-radius: 6px; cursor: pointer;"> Use Points </button>
                 </div>
             </form>
         </div>
