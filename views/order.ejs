@@ -79,7 +79,6 @@
                 if (item.isAddon) {
                     li.style.marginLeft = "20px";
                     li.style.fontSize = "0.9em";
-                    li.style.listStyleType = "circle";
                 }
 
                 li.innerHTML = `
@@ -89,9 +88,10 @@
 
                 orderList.appendChild(li);
             });
-            
+
             updateTotals();
         }
+
 
         function loadOrder() {
             renderOrderList();
@@ -125,7 +125,6 @@
                 if (item.isAddon) {
                     li.style.marginLeft = "20px";
                     li.style.fontSize = "0.9em";
-                    li.style.listStyleType = "circle";
                 }
                 confirmList.appendChild(li);
             });
@@ -149,10 +148,7 @@
             document.getElementById("confirm-points").textContent = currentUserPoints;
 
             // Confirm button
-            document.getElementById("confirmYes").onclick = async (e) => {
-                e.preventDefault();
-                const email = document.getElementById("emailField").value;
-
+            document.getElementById("confirmYes").onclick = async () => {
                 try {
                     const res = await fetch('/checkout', {
                         method: 'POST',
@@ -160,8 +156,7 @@
                         body: JSON.stringify({
                             orderItems: orderData.items,
                             subtotal: orderData.subtotal,
-                            points: points,
-                            email: email
+                            points: points
                         })
                     });
 
@@ -231,6 +226,7 @@
 
             const qtyInput = document.getElementById(`quantityInput-${productId}`);
             const quantity = Math.max(1, parseInt(qtyInput?.value || '1', 10));
+
             const addonsSection = document.getElementById(`addons-section-${productId}`);
             const selectedAddons = Array.from(addonsSection.querySelectorAll('.addon-checkbox:checked'));
 
@@ -257,6 +253,7 @@
             // Collapse the panel
             addonsSection.classList.remove('show');
             localStorage.removeItem('selectedProduct');
+
         }
 
         function handleAddToOrder(productId, productName, productPrice) {
@@ -279,7 +276,7 @@
 
             const pointsToUse = Math.floor(maxDiscountDollars * POINTS_PER_DOLLAR);
             const discount = pointsToUse / POINTS_PER_DOLLAR;
-            let newTotal = (orderTotal - discount).toFixed(2);
+            newTotal = (orderTotal - discount).toFixed(2);
             const remainingPoints = currentUserPoints - pointsToUse;
             newTotal = clampMoney(newTotal);
 
@@ -352,7 +349,6 @@
         </div>
 
 
-        <!-- Display products for the selected category -->
         <div class="order-center-container">
             <% if (selectedCategory) { %>
                 <% const selectedGroup = groupedProducts.find(group => group.categoryId == selectedCategory); %>
@@ -420,8 +416,8 @@
         <!-- Order Summary -->
          <div class="order-summary">
             <h2>Order Summary</h2>
-            <ul id="order-list" style="list-style-position: inside;"></ul>
-            <p style="margin-top: 20px;">Subtotal: $<span id="subtotal">0.00</span></p>
+            <ul id="order-list"></ul>
+            <p>Subtotal: $<span id="subtotal">0.00</span></p>
             <p>Tax (8.25%): $<span id="tax">0.00</span></p>
             <p>Total: $<span id="total">0.00</span></p>
             <button class="checkout"onclick="checkoutOrder()">Checkout</button>
