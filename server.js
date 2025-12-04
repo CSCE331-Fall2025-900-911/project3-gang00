@@ -545,7 +545,11 @@ app.get('/order', async (req, res) => {
 
 // -------- Checkout Route --------
 app.post('/checkout', async (req, res) => {
-  const { orderItems, subtotal, points} = req.body;
+  const { orderItems, subtotal, points, email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ success: false, message: 'Enter an email to recieve your reciept!' });
+  }
 
   // Validate input
   if (!Array.isArray(orderItems) || orderItems.length === 0) {
@@ -556,6 +560,8 @@ app.post('/checkout', async (req, res) => {
   if (isNaN(subtotalNum)) {
     return res.status(400).json({ success: false, message: 'Invalid subtotal.' });
   }
+
+  let items = [];
 
   const client = await pool.connect();
   try {
@@ -615,7 +621,12 @@ app.post('/checkout', async (req, res) => {
             WHERE order_item_id = $2`,
             [newAddonString, previousOrderItemID]
           );
+
+          // add item to list to pass to email template
+          const productItem = { product_name: " + " + addonName, product_price: productPrice };
+          items.push(productItem);
         }
+        
         continue;
       } else {
         previousItemID = productId;
@@ -624,6 +635,11 @@ app.post('/checkout', async (req, res) => {
       if (!productId || isNaN(productPrice)) {
         throw new Error(`Invalid item: ${JSON.stringify(item)}`);
       }
+
+      const productResult = await client.query(
+        `SELECT product_name FROM products WHERE product_id = $1`, [productId]
+      );
+      const product_name = productResult.rows[0].product_name;
 
       // Reduce ingredient quantities for this product (except Water)
       const ingRes = await client.query(
@@ -667,10 +683,19 @@ app.post('/checkout', async (req, res) => {
         req.user.points = newPoints;
       }
 
+      // add item to list to pass to email template
+      const productItem = { product_name: product_name, product_price: productPrice };
+      items.push(productItem);
+    }
+
+    // now send email with order reciept to customer (if specified)
+    if (email !== null) {
+      const htmlContent = buildReceiptHtml(order_id, items, subtotal);
+      await sendEmail(email, "Your ShareTea Reciept", htmlContent);
     }
 
     await client.query('COMMIT');
-    res.json({ success: true, order_id });
+    return res.json({ success: true, order_id });
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('Checkout error:', err);
@@ -679,6 +704,55 @@ app.post('/checkout', async (req, res) => {
     client.release();
   }
 });
+
+function buildReceiptHtml(orderId, items, subtotal) {
+  const itemsHtml = items.map(item =>
+    `<tr>
+      <td>${item.product_name}</td>
+      <td style="text-align:right;">$${item.product_price.toFixed(2)}</td>
+    </tr>`
+  ).join("");
+
+  return `
+    <h2>Receipt for Order #${orderId}</h2>
+    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th>Item/Add-on</th>
+          <th>Price</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${itemsHtml}
+      </tbody>
+    </table>
+    <p><strong>Total: $${subtotal.toFixed(2)}</strong></p>
+    <p>Thank you for your order!</p>
+  `;
+}
+
+async function sendEmail(toEmail, subject, htmlContent) {
+  const MAILGUN_DOMAIN = "mg.sharetea.store"; // domain that I acquired    
+  const MAILGUN_API_KEY = process.env.EMAIL_API_KEY;    // Mailgun private API key
+
+  const params = new URLSearchParams();
+  params.append("from", "ShareTea POS <no-reply@mg.sharetea.store>");
+  params.append("to", toEmail);
+  params.append("subject", subject);
+  params.append("html", htmlContent);
+
+  const res = await fetch(`https://api.mailgun.net/v3/${MAILGUN_DOMAIN}/messages`, {
+    method: "POST",
+    headers: {
+      "Authorization": "Basic " + Buffer.from(`api:${MAILGUN_API_KEY}`).toString("base64"),
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    body: params
+  });
+
+  const data = await res.text(); 
+  console.log("Mailgun response:", data);
+}
 
 // -------- Kitchen Routes -------- //
 app.get('/employee/kitchen', async (req, res) => {
