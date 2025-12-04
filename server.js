@@ -544,7 +544,7 @@ app.get('/order', async (req, res) => {
 
 // -------- Checkout Route --------
 app.post('/checkout', async (req, res) => {
-  const { orderItems, subtotal, points, email } = req.body;
+  const { orderItems, subtotal, currentPoints, pointsRedeemed, pointsEarned, email } = req.body;
 
   if (!email) {
     return res.status(400).json({ success: false, message: 'Enter an email to recieve your reciept!' });
@@ -668,24 +668,24 @@ app.post('/checkout', async (req, res) => {
       );
       previousOrderItemID = orderItemResult.rows[0].order_item_id;
 
-      //update user points if user exists
+      // add item to list to pass to email template
+      const productItem = { product_name: product_name, product_price: productPrice };
+      items.push(productItem);
+    }
+
+          //update user points if user exists
       if(req.isAuthenticated() && req.user.customer_id != undefined){
         const result = await client.query(
         `UPDATE customers 
-         SET points = points + $1
+         SET points = $1 - $2 + $3
          WHERE "email" = $2
          RETURNING points;`,
-         [points, req.user.email]
+         [currentPoints, pointsRedeemed, pointsEarned, req.user.email]
         );
 
         const newPoints = result.rows[0].points;
         req.user.points = newPoints;
       }
-
-      // add item to list to pass to email template
-      const productItem = { product_name: product_name, product_price: productPrice };
-      items.push(productItem);
-    }
 
     // now send email with order reciept to customer (if specified)
     if (email !== null) {

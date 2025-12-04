@@ -6,9 +6,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     
     <script>
-        const userIsLoggedIn = <%= user ? 'true' : 'false' %>;
-        const userPoints = <%= user ? (user && typeof user.points === 'number') ? user.points : 0 : 0 %>;
+        const userPoints = <%= user ? user.points : 0 %>;
         let currentUserPoints = userPoints;
+        let pointsToRedeem = 0; 
+        const POINTS_PER_DOLLAR = 1000;
+        let pointsEarned = 0;
 
         function addToOrder(productId, productName, productPrice, isAddon = false) {
             const orderList = document.getElementById('order-list');
@@ -147,6 +149,19 @@
 
             document.getElementById("confirm-totalToPoints").textContent = totalToPoints.toFixed(2);
             document.getElementById("confirm-points").textContent = currentUserPoints;
+            
+            let pointsRedeemed = pointsToRedeem;
+            pointsEarned = 0;
+            let finalPointsBalance;
+
+            if (pointsRedeemed > 0) {
+                // Redeem case: currentUserPoints already reduced in openPointsModal
+                pointsEarned = 0;
+                finalPointsBalance = currentUserPoints;
+            } else {
+                pointsEarned = Math.round(total * POINTS_PER_DOLLAR);
+                finalPointsBalance = userPoints + pointsEarned;
+            }
 
             // Confirm button
             document.getElementById("confirmYes").onclick = async (e) => {
@@ -160,7 +175,9 @@
                         body: JSON.stringify({
                             orderItems: orderData.items,
                             subtotal: orderData.subtotal,
-                            points: points,
+                            currentPoints: finalPointsBalance, 
+                            pointsRedeemed: pointsRedeemed,  
+                            pointsEarned: pointsEarned, 
                             email: email
                         })
                     });
@@ -296,9 +313,6 @@
         }
 
         //function to show points modal for users
-        let pointsToRedeem = 0; 
-        const POINTS_PER_DOLLAR = 100;
-
         function openPointsModal(orderTotal) {
             const maxDiscountDollars = Math.min(orderTotal, currentUserPoints / POINTS_PER_DOLLAR);
 
@@ -443,14 +457,25 @@
             <ul id="confirm-order-list" style="list-style-position: inside;  text-align: left; margin-top: 10px;"></ul>
             <p style="margin-top: 20px;">Subtotal: $<span id="confirm-subtotal">0.00</span></p>
             <p>Tax: $<span id="confirm-tax">0.00</span></p>
-            <p>Total: $<span id="confirm-total">0.00</span></p>
+            <p style="font-weight: 700;">Total: $<span id="confirm-total">0.00</span></p>
             <p>Total converted to points: <span id="confirm-totalToPoints">0.00</span></p>
-            <p>Your points <span id="confirm-points">0.00</span></p>
-            <div class="modal-order-buttons">
-                <button id="confirmYes">Confirm</button>
-                <button id="confirmNo">Cancel</button>
-                <button id="confirmPoints"> Use Points </button>
-            </div>
+            <p>Your points: <span id="confirm-points">0.00</span></p>
+
+            <form class="form" style="margin-top: 20px;" novalidate>
+                <% if (user) { %>
+                    <label for="email" class="visually-hidden" style="margin-bottom: -10px; margin-left: 10px; text-align: left;">Email (to recieve reciept):</label>
+                    <input id="emailField" name="email" type="email" placeholder="Email" value="<%- user.email %>" />
+                <% } else { %>
+                    <label for="email" class="visually-hidden" style="margin-bottom: -10px; margin-left: 10px; text-align: left;">Email  (to recieve reciept):</label>
+                    <input id="emailField" name="email" type="email" placeholder="Email" />
+                <% } %>
+                    
+                <div class="modal-order-buttons">
+                    <button id="confirmYes" type="button" style="padding: 8px 16px; border: none; background: #d9534f; color: white; border-radius: 6px; cursor: pointer;">Confirm</button>
+                    <button id="confirmNo" type="button" style="padding: 8px 16px; border: 1px solid #ccc; background: white; border-radius: 6px; cursor: pointer;">Cancel</button>
+                    <button id="confirmPoints" type="button" style="padding: 8px 16px; border: none; background: #d9534f; color: white; border-radius: 6px; cursor: pointer;"> Use Points </button>
+                </div>
+            </form>
         </div>
     </div>
 
