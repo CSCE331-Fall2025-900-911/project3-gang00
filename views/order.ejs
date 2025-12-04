@@ -7,6 +7,7 @@
     
     <script>
         const userPoints = <%= user ? user.points : 0 %>;
+        const userPoints = <%= user ? user.points : 0 %>;
         let currentUserPoints = userPoints;
         let pointsToRedeem = 0; 
         const POINTS_PER_DOLLAR = 1000;
@@ -81,7 +82,6 @@
                 if (item.isAddon) {
                     li.style.marginLeft = "20px";
                     li.style.fontSize = "0.9em";
-                    li.style.listStyleType = "circle";
                 }
 
                 li.innerHTML = `
@@ -91,9 +91,10 @@
 
                 orderList.appendChild(li);
             });
-            
+
             updateTotals();
         }
+
 
         function loadOrder() {
             renderOrderList();
@@ -127,7 +128,6 @@
                 if (item.isAddon) {
                     li.style.marginLeft = "20px";
                     li.style.fontSize = "0.9em";
-                    li.style.listStyleType = "circle";
                 }
                 confirmList.appendChild(li);
             });
@@ -164,10 +164,7 @@
             }
 
             // Confirm button
-            document.getElementById("confirmYes").onclick = async (e) => {
-                e.preventDefault();
-                const email = document.getElementById("emailField").value;
-
+            document.getElementById("confirmYes").onclick = async () => {
                 try {
                     const res = await fetch('/checkout', {
                         method: 'POST',
@@ -236,30 +233,6 @@
         }
 
 
-        // function addProductWithAddons(productId, fallbackName, fallbackPrice) {
-        //    const selectedProduct = JSON.parse(localStorage.getItem('selectedProduct'));
-        //     if (selectedProduct) {
-        //         addToOrder(selectedProduct.id, selectedProduct.name, selectedProduct.price);
-        //     } else {
-        //         addToOrder(productId, fallbackName, fallbackPrice);
-        //     }
-
-
-        //     // Add selected add-ons
-        //     const addonsSection = document.getElementById(`addons-section-${productId}`);
-        //     const selectedAddons = addonsSection.querySelectorAll('.addon-checkbox:checked');
-        //     selectedAddons.forEach(cb => {
-        //         const addonId = cb.dataset.id;
-        //         const addonName = cb.dataset.name;
-        //         const addonPrice = parseFloat(cb.dataset.price);
-        //         addToOrder(addonId, addonName, addonPrice, true);
-        //         cb.checked = false; // clear checkbox
-        //     });
-
-        //     showAddons(productId); // Collapse the add-ons section after adding to order
-            
-        // }
-
         function addProductWithAddons(productId) {
 
             // selectedProduct stored when addons panel is opened
@@ -273,6 +246,7 @@
 
             const qtyInput = document.getElementById(`quantityInput-${productId}`);
             const quantity = Math.max(1, parseInt(qtyInput?.value || '1', 10));
+
             const addonsSection = document.getElementById(`addons-section-${productId}`);
             const selectedAddons = Array.from(addonsSection.querySelectorAll('.addon-checkbox:checked'));
 
@@ -299,6 +273,7 @@
             // Collapse the panel
             addonsSection.classList.remove('show');
             localStorage.removeItem('selectedProduct');
+
         }
 
         function handleAddToOrder(productId, productName, productPrice) {
@@ -318,7 +293,7 @@
 
             const pointsToUse = Math.floor(maxDiscountDollars * POINTS_PER_DOLLAR);
             const discount = pointsToUse / POINTS_PER_DOLLAR;
-            let newTotal = (orderTotal - discount).toFixed(2);
+            newTotal = (orderTotal - discount).toFixed(2);
             const remainingPoints = currentUserPoints - pointsToUse;
             newTotal = clampMoney(newTotal);
 
@@ -391,7 +366,6 @@
         </div>
 
 
-        <!-- Display products for the selected category -->
         <div class="order-center-container">
             <% if (selectedCategory) { %>
                 <% const selectedGroup = groupedProducts.find(group => group.categoryId == selectedCategory); %>
@@ -400,29 +374,51 @@
                         <h2><%= selectedGroup.category %></h2>
                         <ul>
                             <% selectedGroup.products.forEach((product) => { %>
-                                <li>
-                                    <strong><%= product.name %></strong> - $<%= product.price %>
-                                    <button class="orderButtons" onclick="showAddons('<%= product.id %>', '<%= product.name %>', <%= product.price %>)">Select Add-ons</button>
-                                    <button class="orderButtons" onclick="handleAddToOrder('<%= product.id %>', '<%= product.name %>', <%= product.price %>)">Add to Order</button>
-                                    <div id="addons-section-<%= product.id %>" class="addons-container">  
-                                        <h2>Select Add-ons</h2>
-                                        <ul>
-                                            <% addons.forEach(addon => { %>
-                                                <li>
-                                                    <input type="checkbox" class="addon-checkbox" data-id="<%= addon.id %>" data-name="<%= addon.name %>" data-price="<%= addon.price %>">
-                                                    <strong><%= addon.name %></strong> - $<%= addon.price.toFixed(2) %>
-                                                    
-                                                </li>
-                                                
-                                            <% }); %>
-                                        </ul>
-                                        <div class="quantitySelector">
-                                            <label for="quantityInput-<%= product.id %>">Quantity:</label>
-                                            <input type="number" id="quantityInput-<%= product.id %>" min="1" value="1" style="width:70px;">
+                                <li class="product-item">
+                                    <img src="<%= product.image %>" alt="<%= product.name %>" class="product-image">
+
+                                    <div class="product-center">
+                                        <span class="product-name"><%= product.name %></span>
+                                        <span class="product-price">$<%= product.price %></span>
+
+                                        <div class="product-buttons">
+                                            <button class="orderButtons" 
+                                                    onclick="showAddons('<%= product.id %>', '<%= product.name %>', <%= product.price %>)">
+                                                Select Add-ons
+                                            </button>
+
+                                            <button class="orderButtons" 
+                                                    onclick="handleAddToOrder('<%= product.id %>', '<%= product.name %>', <%= product.price %>)">
+                                                Add to Order
+                                            </button>
                                         </div>
-                                        <button class="orderButtons" onclick="addProductWithAddons('<%= product.id %>')">Add to Order</button>
+
+                                        <!-- Add-ons Section -->
+                                        <div id="addons-section-<%= product.id %>" class="addons-container">
+                                            <h2>Select Add-ons</h2>
+                                            <ul>
+                                                <% addons.forEach(addon => { %>
+                                                    <li>
+                                                        <input type="checkbox" 
+                                                            class="addon-checkbox" 
+                                                            data-id="<%= addon.id %>" 
+                                                            data-name="<%= addon.name %>" 
+                                                            data-price="<%= addon.price %>">
+                                                        <strong><%= addon.name %></strong> - $<%= addon.price.toFixed(2) %>
+                                                    </li>
+                                                <% }); %>
+                                            </ul>
+
+                                            <div class="quantitySelector">
+                                                <label for="quantityInput-<%= product.id %>">Quantity:</label>
+                                                <input type="number" id="quantityInput-<%= product.id %>" min="1" value="1" style="width:70px;">
+                                            </div>
+
+                                            <button class="orderButtons" onclick="addProductWithAddons('<%= product.id %>')">
+                                                Add to Order
+                                            </button>
+                                        </div>
                                     </div>
-                                    
                                 </li>
                             <% }); %>
                         </ul>
@@ -438,8 +434,8 @@
         <!-- Order Summary -->
          <div class="order-summary">
             <h2>Order Summary</h2>
-            <ul id="order-list" style="list-style-position: inside;"></ul>
-            <p style="margin-top: 20px;">Subtotal: $<span id="subtotal">0.00</span></p>
+            <ul id="order-list"></ul>
+            <p>Subtotal: $<span id="subtotal">0.00</span></p>
             <p>Tax (8.25%): $<span id="tax">0.00</span></p>
             <p>Total: $<span id="total">0.00</span></p>
             <button class="checkout"onclick="checkoutOrder()">Checkout</button>
@@ -454,28 +450,17 @@
     <div id="confirmModal" class="modal-order hidden">
         <div class="modal-order-content">
             <h2>Confirm Your Order</h2>
-            <ul id="confirm-order-list" style="list-style-position: inside;  text-align: left; margin-top: 10px;"></ul>
-            <p style="margin-top: 20px;">Subtotal: $<span id="confirm-subtotal">0.00</span></p>
+            <ul id="confirm-order-list"></ul>
+            <p>Subtotal: $<span id="confirm-subtotal">0.00</span></p>
             <p>Tax: $<span id="confirm-tax">0.00</span></p>
-            <p style="font-weight: 700;">Total: $<span id="confirm-total">0.00</span></p>
+            <p>Total: $<span id="confirm-total">0.00</span></p>
             <p>Total converted to points: <span id="confirm-totalToPoints">0.00</span></p>
             <p>Your points: <span id="confirm-points">0.00</span></p>
-
-            <form class="form" style="margin-top: 20px;" novalidate>
-                <% if (user) { %>
-                    <label for="email" class="visually-hidden" style="margin-bottom: -10px; margin-left: 10px; text-align: left;">Email (to recieve reciept):</label>
-                    <input id="emailField" name="email" type="email" placeholder="Email" value="<%- user.email %>" />
-                <% } else { %>
-                    <label for="email" class="visually-hidden" style="margin-bottom: -10px; margin-left: 10px; text-align: left;">Email  (to recieve reciept):</label>
-                    <input id="emailField" name="email" type="email" placeholder="Email" />
-                <% } %>
-                    
-                <div class="modal-order-buttons">
-                    <button id="confirmYes" type="button" style="padding: 8px 16px; border: none; background: #d9534f; color: white; border-radius: 6px; cursor: pointer;">Confirm</button>
-                    <button id="confirmNo" type="button" style="padding: 8px 16px; border: 1px solid #ccc; background: white; border-radius: 6px; cursor: pointer;">Cancel</button>
-                    <button id="confirmPoints" type="button" style="padding: 8px 16px; border: none; background: #d9534f; color: white; border-radius: 6px; cursor: pointer;"> Use Points </button>
-                </div>
-            </form>
+            <div class="modal-order-buttons">
+                <button id="confirmYes">Confirm</button>
+                <button id="confirmNo">Cancel</button>
+                <button id="confirmPoints" type="button" style="padding: 8px 16px; border: none; background: #d9534f; color: white; border-radius: 6px; cursor: pointer;"> Use Points </button>
+            </div>
         </div>
     </div>
 

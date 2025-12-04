@@ -504,7 +504,8 @@ app.get('/order', async (req, res) => {
         products.product_name AS name, 
         products.product_price AS price, 
         products.category_id, 
-        categories.category_name AS category
+        categories.category_name AS category,
+        products.image_address as image
       FROM products
       JOIN categories ON products.category_id = categories.category_id
       ORDER BY categories.category_id;
