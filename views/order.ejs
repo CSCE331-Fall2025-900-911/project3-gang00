@@ -79,6 +79,7 @@
                 if (item.isAddon) {
                     li.style.marginLeft = "20px";
                     li.style.fontSize = "0.9em";
+                    li.style.listStyleType = "circle";
                 }
 
                 li.innerHTML = `
@@ -125,6 +126,7 @@
                 if (item.isAddon) {
                     li.style.marginLeft = "20px";
                     li.style.fontSize = "0.9em";
+                    li.style.listStyleType = "circle";
                 }
                 confirmList.appendChild(li);
             });
@@ -148,7 +150,10 @@
             document.getElementById("confirm-points").textContent = currentUserPoints;
 
             // Confirm button
-            document.getElementById("confirmYes").onclick = async () => {
+            document.getElementById("confirmYes").onclick = async (e) => {
+                e.preventDefault();
+                const email = document.getElementById("emailField").value;
+
                 try {
                     const res = await fetch('/checkout', {
                         method: 'POST',
@@ -156,7 +161,8 @@
                         body: JSON.stringify({
                             orderItems: orderData.items,
                             subtotal: orderData.subtotal,
-                            points: points
+                            points: points,
+                            email: email
                         })
                     });
 
@@ -416,8 +422,8 @@
         <!-- Order Summary -->
          <div class="order-summary">
             <h2>Order Summary</h2>
-            <ul id="order-list"></ul>
-            <p>Subtotal: $<span id="subtotal">0.00</span></p>
+            <ul id="order-list" style="list-style-position: inside;"></ul>
+            <p style="margin-top: 20px;">Subtotal: $<span id="subtotal">0.00</span></p>
             <p>Tax (8.25%): $<span id="tax">0.00</span></p>
             <p>Total: $<span id="total">0.00</span></p>
             <button class="checkout"onclick="checkoutOrder()">Checkout</button>
