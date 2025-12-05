@@ -37,7 +37,7 @@
             ? Math.min(100, Math.round(((totalPoints - currentTier.min) / (nextTier.min - currentTier.min)) * 100))
             : 100;
         const pointsToNextTier = nextTier ? Math.max(0, nextTier.min - totalPoints) : 0;
-        const walletValue = (totalPoints / 100).toFixed(2);
+        const walletValue = (totalPoints / 1000).toFixed(2);
     %>
 
     <main class="profile-layout">
