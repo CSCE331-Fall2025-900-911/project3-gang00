@@ -6,8 +6,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     
     <script>
-        const userPoints = <%= user ? user.points : 0 %>;
-        const userPoints = <%= user ? user.points : 0 %>;
+        //make sure user is not undefined or points not undefined
+        const userPoints = <%- JSON.stringify(
+        (typeof user !== 'undefined' && user && user.points != null)
+            ? user.points: 0) %>;
         let currentUserPoints = userPoints;
         let pointsToRedeem = 0; 
         const POINTS_PER_DOLLAR = 1000;

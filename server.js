@@ -545,7 +545,7 @@ app.get('/order', async (req, res) => {
 
 // -------- Checkout Route --------
 app.post('/checkout', async (req, res) => {
-  const { orderItems, subtotal, currentPoints, pointsRedeemed, pointsEarned, email } = req.body;
+  const { orderItems, subtotal, currentPoints, pointsRedeemed, pointsEarned, email} = req.body;
 
   if (!email) {
     return res.status(400).json({ success: false, message: 'Enter an email to recieve your reciept!' });
