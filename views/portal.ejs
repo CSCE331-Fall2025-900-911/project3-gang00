@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<head>
+    <title>Welcome</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div>
+        <div class="signin-container" style="align-items: center; height: 100vh;">
+            <section class="signup-card" style="height: fit-content;" aria-labelledby="signin-title" >
+                <div class="logo" style="justify-content: center;">
+                    <img src="/ShareTea_logo.webp" alt="ShareTea Logo" class="logo-img">
+                </div>
+
+                <div class="brand" style="margin-top: 50px;"> 
+                    <h1 id="signin-title">Welcome to ShareTea!</h1>
+                    <p>Click to enter the interface of your choosing:</p>
+                </div>
+
+                <form id="signin-form" style="align-items: center;" class="form" novalidate>
+                    <div class="toggle-group" style="width: 400px; max-width: none;">
+                        <input type="radio" id="customer" name="role" value="Customer" checked>
+                        <label for="customer">Customer</label>
+
+                        <input type="radio" id="employee" name="role" value="Employee">
+                        <label for="employee">Employee</label>
+
+                        <input type="radio" id="manager" name="role" value="Manager">
+                        <label for="manager">Manager</label>
+                    </div>
+
+                    <button type="submit" style="width: 200px;" class="primary2">Continue</button>
+                </form>
+            </section>
+        </div>
+    </div>
+    <script type="module" src="/langSelect.js"></script>
+    <script src="/portal.js"></script>
+</body>

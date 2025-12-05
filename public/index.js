@@ -15,3 +15,13 @@ speakerBtn.addEventListener("click", () => {
     speakerImg.alt = "Text-to-Speech Off";
     }
 });
+
+function goToOrder() {
+    (async () => {
+    fetch("/order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refreshLocalStorage: true })
+    });
+    })();
+}

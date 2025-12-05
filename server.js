@@ -139,6 +139,10 @@ passport.use('employee-local', new LocalStrategy(
 
 // Home
 app.get('/', (req, res) => {
+  res.render('portal');
+});
+
+app.get('/kiosk', (req, res) => {
   if (req.isAuthenticated() && (req.user.customer_id !== undefined)) {
     return res.render('index', { user: req.user });
   }
@@ -147,6 +151,7 @@ app.get('/', (req, res) => {
 
 // Sign-in/Sign-up pages
 app.get('/employee-sign-in', (req, res) => res.render('employeeSignIn'));
+app.get('/manager-sign-in', (req, res) => res.render('managerSignIn'));
 app.get('/general-sign-in', (req, res) => res.render('generalSignIn'));
 app.get('/customer-sign-in', (req, res) => res.render('customerSignIn'));
 app.get('/customer-sign-up', (req, res) => res.render('customerSignUp'));
@@ -185,7 +190,7 @@ app.get('/manager/check-credentials', (req, res) => {
 app.get('/manager', (req, res) => {
   if (!req.isAuthenticated()) {
     // User not logged in at all
-    return res.redirect('/employee-sign-in');
+    return res.redirect('/manager-sign-in');
   }
   if (req.user.employee_id === undefined) {
     // logged in but not as an employee
@@ -238,6 +243,7 @@ app.get('/help', (req, res) => {
     supportEmail: 'support@sharetea.mcgowan',
     supportPhone: '(555) 123-4567',
     supportHours: 'Daily 10 AM - 8 PM',
+    address: 'Zachry Engineering Center, 125 Spence St, College Station, TX 77840'
   };
   const faqs = [
     { q: 'How do I place an order?', a: 'Go to the Order page, pick items, customize, and checkout.' },
@@ -415,7 +421,7 @@ app.get('/customer/logout', (req, res) => {
 app.get('/google/auth', passport.authenticate('google', { scope: ['profile', 'email'] }));
 app.get('/customer-sign-in/google/callback',
   passport.authenticate('google', { failureRedirect: '/' }),
-  (req, res) => res.redirect('/')
+  (req, res) => res.redirect('/kiosk')
 );
 
 // View Profile
@@ -425,21 +431,6 @@ app.get('/profile', (req, res) => {
   }
   res.redirect('/');
 })
-
-// Contact page
-app.get('/contact', (req, res) => {
-  const site = {
-    brand: 'Sharetea',
-    supportEmail: 'support@sharetea.mcgowan',
-    supportPhone: '(555) 123-4567',
-    supportHours: 'Daily 10 AM - 8 PM',
-    address: 'Zachry Engineering Center, 125 Spence St, College Station, TX 77840',
-  };
-  if (req.isAuthenticated() && (req.user.customer_id !== undefined)) {
-    return res.render('contact', { site: site, user: req.user });
-  }
-  res.render('contact', { site: site, user: null });
-});
 
 // Example DB page
 app.get('/user', async (req, res) => {
