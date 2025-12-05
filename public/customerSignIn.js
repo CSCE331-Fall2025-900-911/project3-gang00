@@ -13,7 +13,7 @@ form.addEventListener('submit', e => {
         .then(res => res.json())
         .then(data => {
         if (data.success) {
-            window.location.href = "/"; // GET request to home page
+            window.location.href = "/kiosk"; // GET request to home page
         } else {
             alert("Login failed: " + data.message);
         }

@@ -26,7 +26,7 @@ html, body {
     align-items: center;
     background-color: #ffdddd;
     /* background-color: white; */
-    padding: 1.3rem 1rem;
+    padding: 10px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     flex-shrink: 0;
 }
@@ -215,6 +215,22 @@ input:focus{
   color:white;
   box-shadow:0 6px 16px rgba(37,99,235,0.18);
   margin-top:4px;
+}
+
+.primary2{
+  width:100%;
+  padding:12px 1px;
+  border-radius:10px;
+  border-width: 2px;
+  border-color: #a3a3a3;
+  border-style: solid;
+  font-weight:600;
+  font-size: 20px;
+  cursor:pointer;
+  background:linear-gradient(180deg, #ff6d6d,#ff6c6c);
+  color:white;
+  box-shadow:0 6px 16px rgba(99, 99, 99, 0.4);
+  margin-top:20px;
 }
 
 #googleButton {
@@ -414,7 +430,7 @@ input:focus{
 
 .cancel-order {
     position: fixed;
-    bottom: 8.75rem;
+    bottom: 1rem;
     left: 1rem;
     display: inline-block;
     margin-top: 20px;
@@ -436,7 +452,7 @@ input:focus{
 
 .clear-order {
     position: fixed;
-    bottom: 1rem;
+    bottom: 8.75rem;
     left: 1rem;
     display: inline-block;
     margin-top: 20px;
