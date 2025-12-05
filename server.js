@@ -678,10 +678,10 @@ app.post('/checkout', async (req, res) => {
       if(req.isAuthenticated() && req.user.customer_id != undefined){
         const result = await client.query(
         `UPDATE customers 
-         SET points = $1 - $2 + $3
+         SET points = $1
          WHERE "email" = $2
          RETURNING points;`,
-         [currentPoints, pointsRedeemed, pointsEarned, req.user.email]
+         [currentPoints, req.user.email]
         );
 
         const newPoints = result.rows[0].points;
