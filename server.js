@@ -13,6 +13,15 @@ const LocalStrategy = require('passport-local').Strategy;
 
 const WEATHER_API_KEY = process.env.WEATHER_API_KEY;
 
+const { Vonage } = require('@vonage/server-sdk');
+const fs = require('fs');
+
+const vonage = new Vonage({
+ applicationId: process.env.VONAGE_APPLICATION_ID,
+ privateKey: process.env.VONAGE_PRIVATE_KEY
+});
+
+
 // ---- App Setup ----
 const app = express();
 const port = process.env.PORT || 3000;
@@ -771,18 +780,83 @@ app.get('/employee/kitchen', async (req, res) => {
 });
 
 app.post('/employee/kitchen/complete-order', async (req, res) => {
-  if (req.isAuthenticated() && req.user.employee_id !== undefined) {
-    const order_id = req.body.order_id;
-    try {
-      await pool.query('UPDATE orders SET isCompleted = TRUE WHERE order_id = $1', [order_id]);
-      return res.json({ success: true });
-    } catch (err) {
-      console.error('DB error:', err);
-      return res.status(500).send('Database query failed');
-    }
+  // Auth guard
+  if (!(req.isAuthenticated() && req.user.employee_id !== undefined)) {
+    return res.status(401).json({ success: false, message: 'Unauthorized' });
   }
-  result.redirect('/employee/kitchen');
-});
+ 
+ 
+  const { order_id } = req.body;
+ 
+ 
+  try {
+    // 1) Mark order as completed in DB
+    await pool.query('UPDATE orders SET isCompleted = TRUE WHERE order_id = $1', [order_id]);
+ 
+ 
+    // 2) Place the phone call with Vonage
+    const TO_NUMBER = process.env.VOICE_TO_NUMBER;
+    const FROM_NUMBER = process.env.VONAGE_VIRTUAL_NUMBER;
+ 
+ 
+    const resp = await vonage.voice.createOutboundCall({
+      to: [
+        {
+          type: "phone",
+          number: TO_NUMBER,
+        },
+      ],
+      from: {
+        type: "phone",
+        number: FROM_NUMBER,
+      },
+      ncco: [
+        {
+          action: "talk",
+          text: `<speak><break time="1s"/>Hello! Your order number ${order_id} is ready for pickup.<break time="1s"/></speak>`,
+        },
+      ],
+     
+    });
+ 
+ 
+    console.log("Call created successfully:");
+    console.log(JSON.stringify(resp, null, 2));
+ 
+ 
+    // 3) Respond to the frontend ONCE
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Error completing order / calling customer:', err);
+    return res.status(500).json({
+      success: false,
+      message: 'Database or phone call failed',
+    });
+  }
+ });
+ 
+ 
+ app.post('/employee/kitchen/delete-order', async (req, res) => {
+  if (!(req.isAuthenticated() && req.user.employee_id !== undefined)) {
+    return res.status(401).json({ success: false, message: 'Unauthorized' });
+  }
+ 
+ 
+  const { order_id } = req.body;
+ 
+ 
+  try {
+    await pool.query('DELETE FROM orderitems WHERE order_id = $1;', [order_id]);
+    await pool.query('DELETE FROM orders WHERE order_id = $1;', [order_id]);
+ 
+ 
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Delete order error:', err);
+    return res.status(500).json({ success: false, message: 'Database query failed' });
+  }
+ });
+ 
 
 // -------- Translation setup (unused but harmless) --------
 const TRANSLATE_ENABLED = (process.env.TRANSLATE_ENABLED || 'false') === 'true';
