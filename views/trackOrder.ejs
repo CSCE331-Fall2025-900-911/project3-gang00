@@ -15,12 +15,37 @@
     <main>
         <section>
             <form action="/track" method="POST" class="trackGrid">
-
-                <!-- Get the user input here and return to the database -->
-                <input type="orderNumber" name="orderNumber" placeholder="Your order number" required />
+                <input type="text" name="orderNumber" placeholder="Your order number" value="<%= inputOrderId || '' %>" required/>
                 <button type="submit">Track</button>
-    
-                </form>
+            </form>
+        </section>
+
+        <section class="trackResult">
+          <% if (order) { %>
+            <div class="card">
+              <p><strong>Order ID:</strong> <%= order.order_id %></p>
+
+              <% if (order.iscompleted) { %>
+                <p><strong>Status:</strong> Completed</p>
+                <p><strong>Completed at:</strong> <%= order.date_time %></p>
+              <% } else { %>
+                <p><strong>Status:</strong> Not completed yet</p>
+                <p><strong>Placed at:</strong> <%= order.date_time %></p>
+              <% } %>
+
+              <p><strong>Subtotal:</strong> $<%= order.sub_total %></p>
+              <p><strong>Product:</strong> 
+                <ul>
+                    <% orders.forEach(row => { %>
+                      <li><%= row.product_name %> * <%= row.qty %></li>
+                    <% }) %>
+                </ul>
+              </p>
+
+            </div>
+          <% } else if (notFound) { %>
+            <p class="error">No order found for ID <%= inputOrderId %>. Please check the number.</p>
+          <% } %>
         </section>
     </main>
     <script type="module" src="/langSelect.js"></script>
