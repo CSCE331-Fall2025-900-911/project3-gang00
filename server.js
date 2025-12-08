@@ -148,6 +148,15 @@ passport.use('employee-local', new LocalStrategy(
 
 // Home
 app.get('/', (req, res) => {
+  if (req.isAuthenticated()) {
+    return req.logout(err => {
+      if (err) { return res.json({ success: false, message: 'Logout Failed' }); }
+      req.session.destroy(err2 => {
+        if (err2) { console.error(err2); }
+        return res.redirect('/');
+      });
+    });
+  }
   res.render('portal');
 });
 
@@ -601,6 +610,57 @@ app.get('/order', async (req, res) => {
       return res.render('order', { groupedProducts: groupedProducts, selectedCategory: selectedCategory, addons: addons, user: req.user });
     }
     res.render('order', { groupedProducts: groupedProducts, selectedCategory: selectedCategory, addons: addons, user: null });
+  } catch (err) {
+    console.error('DB error:', err);
+    res.status(500).send('Database query failed');
+  }
+});
+
+// ----- Employee Order Page ------ //
+app.get('/employee/order', async (req, res) => {
+  try {
+    const categoriesQuery = 'SELECT category_id, category_name FROM categories;';
+    const { rows: categories } = await pool.query(categoriesQuery);
+
+    const productsQuery = `
+      SELECT 
+        products.product_id AS id,
+        products.product_name AS name, 
+        products.product_price AS price, 
+        products.category_id, 
+        categories.category_name AS category,
+        products.image_address as image
+      FROM products
+      JOIN categories ON products.category_id = categories.category_id
+      ORDER BY categories.category_id;
+    `;
+    const { rows: products } = await pool.query(productsQuery);
+
+    const addonsQuery = `
+      SELECT 
+        addon_id AS id,
+        addon_name AS name,
+        addon_price AS price
+      FROM addons
+      WHERE is_available = true;
+    `;
+    const addons = (await pool.query(addonsQuery)).rows.map(a => ({
+      ...a,
+      price: parseFloat(a.price),
+    }));
+
+    const groupedProducts = categories.map(category => ({
+      category: category.category_name,
+      categoryId: category.category_id,
+      products: products.filter(p => p.category_id === category.category_id),
+    }));
+
+    const selectedCategory = req.query.category || null;
+
+    if (req.isAuthenticated() && req.user.customer_id !== undefined) {
+      return res.render('employeeOrder', { groupedProducts: groupedProducts, selectedCategory: selectedCategory, addons: addons, user: req.user });
+    }
+    res.render('employeeOrder', { groupedProducts: groupedProducts, selectedCategory: selectedCategory, addons: addons, user: null });
   } catch (err) {
     console.error('DB error:', err);
     res.status(500).send('Database query failed');
