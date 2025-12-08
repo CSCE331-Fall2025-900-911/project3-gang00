@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Cashier</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <script>
+        //make sure user is not undefined or points not undefined
+        const userPoints = <%- JSON.stringify(
+        (typeof user !== 'undefined' && user && user.points != null)
+            ? user.points: 0) %>;
+        let currentUserPoints = userPoints;
+        let pointsToRedeem = 0; 
+        const POINTS_PER_DOLLAR = 100;
+        let pointsEarned = 0;
+
+        const isLoggedIn = <%- JSON.stringify(!!user) %>;
+
+        function addToOrder(productId, productName, productPrice, isAddon = false) {
+            const orderList = document.getElementById('order-list');
+            const orderData = JSON.parse(localStorage.getItem('orderData')) || { items: [], subtotal: 0 };
+
+            // Add item to data
+            const newItem = { productId, productName, productPrice, isAddon };
+            orderData.items.push(newItem);
+            orderData.subtotal += productPrice;
+            localStorage.setItem('orderData', JSON.stringify(orderData));
+
+            // Create list element
+            const li = document.createElement('li');
+            li.classList.add("order-item");
+
+            if (isAddon) {
+                li.style.marginLeft = "20px";
+                li.style.fontSize = "0.9em";
+                li.style.listStyleType = "circle";
+            }
+
+            li.innerHTML = `
+                ${productName} - $${productPrice.toFixed(2)}
+                <button class="remove-item" onclick="removeItem(${orderData.items.length - 1})">X</button>
+            `;
+
+            orderList.appendChild(li);
+            updateTotals();
+
+            
+        }
+
+        function updateTotals() {
+            const orderData = JSON.parse(localStorage.getItem('orderData')) || { items: [], subtotal: 0 };
+
+            const subtotal = orderData.subtotal;
+            const tax = subtotal * 0.0825;
+            const total = subtotal + tax;
+
+            document.getElementById('subtotal').textContent = subtotal.toFixed(2);
+            document.getElementById('tax').textContent = tax.toFixed(2);
+            document.getElementById('total').textContent = total.toFixed(2);
+        }
+
+        function removeItem(index) {
+            let orderData = JSON.parse(localStorage.getItem('orderData'));
+            if (!orderData) return;
+
+            const removed = orderData.items[index];
+            orderData.subtotal -= removed.productPrice;
+
+            orderData.items.splice(index, 1);
+
+            localStorage.setItem('orderData', JSON.stringify(orderData));
+
+            renderOrderList();
+        }
+
+        function renderOrderList() {
+            const orderList = document.getElementById('order-list');
+            orderList.innerHTML = "";
+
+            const orderData = JSON.parse(localStorage.getItem('orderData')) || { items: [], subtotal: 0 };
+
+            orderData.items.forEach((item, index) => {
+                const li = document.createElement('li');
+                li.classList.add("order-item");
+
+                if (item.isAddon) {
+                    li.style.marginLeft = "20px";
+                    li.style.fontSize = "0.9em";
+                    li.style.listStyleType = "circle";
+                }
+
+                li.innerHTML = `
+                    ${item.productName} - $${item.productPrice.toFixed(2)}
+                    <button class="remove-item" onclick="removeItem(${index})">X</button>
+                `;
+
+                orderList.appendChild(li);
+            });
+
+            updateTotals();
+        }
+
+
+        function loadOrder() {
+            renderOrderList();
+        }
+
+        function clearOrder() {
+            // Clear order data from localStorage
+            localStorage.removeItem('orderData');
+
+            // Reset the order list and totals
+            document.getElementById('order-list').innerHTML = '';
+            document.getElementById('subtotal').textContent = '0.00';
+            document.getElementById('tax').textContent = '0.00';
+            document.getElementById('total').textContent = '0.00';
+        }
+
+        async function checkoutOrder() {
+            const orderData = JSON.parse(localStorage.getItem('orderData'));
+            if (!orderData || orderData.items.length === 0) {
+                alert("Your order is empty!");
+                return;
+            }
+
+            // Populate modal with order items
+            const confirmList = document.getElementById("confirm-order-list");
+            confirmList.innerHTML = "";
+
+            orderData.items.forEach(item => {
+                const li = document.createElement("li");
+                li.textContent = `${item.productName} - $${item.productPrice.toFixed(2)}`;
+                if (item.isAddon) {
+                    li.style.marginLeft = "20px";
+                    li.style.fontSize = "0.9em";
+                    li.style.listStyleType = "circle";
+                }
+                confirmList.appendChild(li);
+            });
+
+            // Fill totals
+            const tax = orderData.subtotal * 0.0825;
+            const total = orderData.subtotal + tax;
+
+            document.getElementById("confirm-subtotal").textContent = orderData.subtotal.toFixed(2);
+            document.getElementById("confirm-tax").textContent = tax.toFixed(2);
+            document.getElementById("confirm-total").textContent = total.toFixed(2);
+
+            // Show modal
+            document.getElementById("confirmModal").classList.remove("hidden");
+
+            //calculate points added
+            let totalToPoints = total * 100;
+
+            if(isLoggedIn){
+                document.getElementById("confirm-totalToPoints").textContent = totalToPoints.toFixed(2);
+                document.getElementById("confirm-points").textContent = currentUserPoints;
+            }
+            
+            pointsEarned = 0;
+            let finalPointsBalance;
+
+            // Confirm button
+            document.getElementById("confirmYes").onclick = async (e) => {
+                e.preventDefault();
+                const email = document.getElementById("emailField").value;
+
+                let pointsRedeemed = pointsToRedeem;
+
+                if (pointsRedeemed > 0) {
+                    // Redeem case: currentUserPoints already reduced in openPointsModal
+                    pointsEarned = 0;
+                    finalPointsBalance = currentUserPoints;
+                } else {
+                    pointsEarned = Math.round(total * POINTS_PER_DOLLAR);
+                    finalPointsBalance = userPoints + pointsEarned;
+                }
+
+                try {
+                    const res = await fetch('/checkout', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            orderItems: orderData.items,
+                            subtotal: orderData.subtotal,
+                            currentPoints: finalPointsBalance, 
+                            pointsRedeemed: pointsRedeemed,  
+                            pointsEarned: pointsEarned, 
+                            email: email
+                        })
+                    });
+
+                    const data = await res.json();
+                    if (data.success) {
+                        alert(`Order placed successfully! Order ID: ${data.order_id}`);
+                        clearOrder();
+                        document.getElementById("confirmModal").classList.add("hidden");
+                        window.location.href = "/employee";
+                    } else {
+                        alert("Checkout failed: " + data.message);
+                    }
+                } catch (err) {
+                    console.error('Checkout error:', err);
+                    alert("An error occurred while checking out.");
+                }
+            };
+
+            //Show 
+
+            // Cancel button closes modal
+            document.getElementById("confirmNo").onclick = () => {
+                document.getElementById("confirmModal").classList.add("hidden");
+            };
+
+            document.getElementById("confirmPoints").onclick = () => {
+                openPointsModal(total);
+            };
+        }
+
+
+
+        function showAddons(productId, productName, productPrice) {
+             const addonsSection = document.getElementById(`addons-section-${productId}`);
+              const isCurrentlyVisible = addonsSection.classList.contains('show');
+               // Hide all other add-on sections
+               document.querySelectorAll('.addons-container').forEach(section => {
+                 if (section !== addonsSection) {
+                     section.classList.remove('show');
+                     }
+                 });
+                 
+                 if (!isCurrentlyVisible) {
+                     addonsSection.classList.add('show');
+                     // Save selected product (only when expanding)
+                     const selectedProduct = { id: productId, name: productName, price: productPrice };
+                     localStorage.setItem('selectedProduct', JSON.stringify(selectedProduct));
+                } else {
+                    // Collapse this section
+                    addonsSection.classList.remove('show');
+                    localStorage.removeItem('selectedProduct');
+                    // Clear all selected checkboxes in this section
+                    addonsSection.querySelectorAll('.addon-checkbox').forEach(cb => cb.checked = false);
+                }
+        }
+
+        function addProductWithAddons(productId) {
+
+            // selectedProduct stored when addons panel is opened
+            const selectedProduct = JSON.parse(localStorage.getItem('selectedProduct'));
+            const product = selectedProduct && String(selectedProduct.id) === String(productId)
+                ? selectedProduct
+                : null;
+            if (!product) {
+                // fallback: sometimes we call addProductWithAddons without selectedProduct, abort safely
+                console.warn('No selectedProduct found for productId', productId);
+                return;
+            }
+
+            // ⭐ NEW – Read ice/sugar/size selections
+            const ice = document.getElementById(`iceOption-${productId}`).value;
+            const sugar = document.getElementById(`sugarOption-${productId}`).value;
+
+            const sizeSelect = document.getElementById(`sizeOption-${productId}`);
+            const size = sizeSelect.value;
+            const sizeUpcharge = parseFloat(sizeSelect.selectedOptions[0].dataset.price);   
+
+            const qtyInput = document.getElementById(`quantityInput-${productId}`);
+            const quantity = Math.max(1, parseInt(qtyInput?.value || '1', 10));
+
+            const addonsSection = document.getElementById(`addons-section-${productId}`);
+            const selectedAddons = Array.from(addonsSection.querySelectorAll('.addon-checkbox:checked'));
+
+            // Add product + addons for each quantity unit
+            for (let i = 0; i < quantity; i++) {
+                // ⭐ NEW – build modified product name
+                const finalName = `${product.name} (${size}, ${ice}, ${sugar})`;
+
+                // ⭐ NEW – include size price
+                const finalPrice = product.price + sizeUpcharge;
+
+                // add main product with options included
+                addToOrder(product.id, finalName, finalPrice, false);
+
+                selectedAddons.forEach(cb => {
+                    const addonId = cb.dataset.id;
+                    const addonName = cb.dataset.name;
+                    const addonPrice = parseFloat(cb.dataset.price);
+                    addToOrder(addonId, addonName, addonPrice, true);
+                });
+            }
+
+            // Reset UI
+            selectedAddons.forEach(cb => cb.checked = false);
+
+            // Reset quantity input to 1
+            if (qtyInput) qtyInput.value = 1;
+
+            // Collapse the panel
+            addonsSection.classList.remove('show');
+            localStorage.removeItem('selectedProduct');
+
+        }
+
+        function handleAddToOrder(productId, productName, productPrice) {
+            const addonsSection = document.getElementById(`addons-section-${productId}`);
+
+            // If addons are showing, call addProductWithAddons
+            if (addonsSection.classList.contains('show')) {
+                addProductWithAddons(productId, productName, productPrice);
+            } else {
+                addToOrder(productId, productName, productPrice);
+            }
+        }
+
+        //function to show points modal for users
+        function openPointsModal(orderTotal) {
+            //Block guests
+            if (!isLoggedIn) {
+                alert("You must be logged in to use points.");
+                return;
+            }
+
+            const maxPointsUserCanUse = currentUserPoints;
+            const maxPointsAllowedByOrder = orderTotal * 1000;
+            const pointsToUse = Math.floor(Math.min(maxPointsUserCanUse, maxPointsAllowedByOrder));
+
+            const discount = pointsToUse / 1000;
+            newTotal = (orderTotal - discount).toFixed(2);
+            const remainingPoints = currentUserPoints - pointsToUse;
+            newTotal = clampMoney(newTotal);
+
+            // Fill modal text
+            document.getElementById("points-order-total").textContent = orderTotal.toFixed(2);
+            document.getElementById("points-current").textContent = currentUserPoints;
+            document.getElementById("points-used").textContent = pointsToUse;
+            document.getElementById("points-new-total").textContent = newTotal;
+            document.getElementById("points-remaining").textContent = remainingPoints;
+
+            pointsToRedeem = pointsToUse;
+
+            document.getElementById("pointsModal").classList.remove("hidden");
+
+            document.getElementById("pointsConfirmYes").onclick = () => {
+                currentUserPoints = remainingPoints;
+                document.getElementById("pointsModal").classList.add("hidden");
+                document.getElementById("confirm-total").textContent = newTotal;
+                document.getElementById("confirm-points").textContent = currentUserPoints;
+                document.getElementById("total").textContent = newTotal;
+            };
+
+            document.getElementById("pointsConfirmNo").onclick = () => {
+                document.getElementById("pointsModal").classList.add("hidden");
+                pointsToRedeem = 0;  
+            };
+        }
+
+        //help prevent total from being 0.01 when it should be 0
+        function clampMoney(value) {
+            const num = Number(value) || 0;     
+            if (num < 0.05) return 0.00;             
+            return Math.round(num * 100) / 100;
+        }
+
+
+
+
+        // Load order data on page load
+        window.onload = loadOrder;
+    </script>
+</head>
+<body>
+    <div>
+        <h1>Order Page</h1>
+
+        <!-- Constant Category Bar -->
+        <div class="category-bar">
+            <ul>
+                <% groupedProducts.forEach(group => { %>
+                    <li>
+                        <a href="/employee/order?category=<%= group.categoryId %>"><%= group.category %></a>
+                    </li>
+                <% }); %>
+            </ul>
+        </div>
+
+
+        <div class="order-center-container">
+            <% if (selectedCategory) { %>
+                <% const selectedGroup = groupedProducts.find(group => group.categoryId == selectedCategory); %>
+                <% if (selectedGroup) { %>
+                    <div class="products">
+                        <h2><%= selectedGroup.category %></h2>
+                        <ul>
+                            <% selectedGroup.products.forEach((product) => { %>
+                                <li class="product-item">
+                                    <!-- <img src="<%= product.image %>" alt="<%= product.name %>" class="product-image"> -->
+
+                                    <div class="product-center">
+                                        <span class="product-name"><%= product.name %></span>
+                                        <span class="product-price">$<%= product.price %></span>
+
+                                        <div class="product-buttons">
+                                            <button class="orderButtons" 
+                                                    onclick="showAddons('<%= product.id %>', '<%= product.name %>', <%= product.price %>)">
+                                                Customize
+                                            </button>
+
+                                            <button class="orderButtons" 
+                                                    onclick="handleAddToOrder('<%= product.id %>', '<%= product.name %>', <%= product.price %>)">
+                                                Add to Order
+                                            </button>
+                                        </div>
+
+                                        <!-- Add-ons Section -->
+                                        <div id="addons-section-<%= product.id %>" class="addons-container">
+                                            <div class="drink-options">
+                                            <h2>Customize Drink</h2>
+
+                                            <!-- Ice Level -->
+                                            <label><strong>Ice:</strong></label>
+                                            <select id="iceOption-<%= product.id %>">
+                                                <option value="Regular Ice">Regular Ice</option>
+                                                <option value="Less Ice">Less Ice</option>
+                                                <option value="No Ice">No Ice</option>
+                                                <option value="Extra Ice">Extra Ice</option>
+                                            </select>
+
+                                            <!-- Sugar Level -->
+                                            <label><strong>Sugar:</strong></label>
+                                            <select id="sugarOption-<%= product.id %>">
+                                                <option value="100% Sugar">100%</option>
+                                                <option value="125% Sugar">125%</option>
+                                                <option value="75% Sugar">75%</option>
+                                                <option value="50% Sugar">50%</option>
+                                                <option value="25% Sugar">25%</option>
+                                                <option value="0% Sugar">0%</option>
+                                            </select>
+
+                                            <!-- Size -->
+                                            <br>
+                                            <label><strong>Size:</strong></label>
+                                            <select id="sizeOption-<%= product.id %>">
+                                                <option value="Small" data-price="0">Small</option>
+                                                <option value="Medium" data-price="0.50">Medium (+$0.50)</option>
+                                                <option value="Large" data-price="1.00">Large (+$1.00)</option>
+                                            </select>
+                                        </div>
+                                            <h2>Select Add-ons</h2>
+                                            <ul>
+                                                <% addons.forEach(addon => { %>
+                                                    <li>
+                                                        <input type="checkbox" 
+                                                            class="addon-checkbox" 
+                                                            data-id="<%= addon.id %>" 
+                                                            data-name="<%= addon.name %>" 
+                                                            data-price="<%= addon.price %>">
+                                                        <strong><%= addon.name %></strong> - $<%= addon.price.toFixed(2) %>
+                                                    </li>
+                                                <% }); %>
+                                            </ul>
+
+                                            <div class="quantitySelector">
+                                                <label for="quantityInput-<%= product.id %>">Quantity:</label>
+                                                <input type="number" id="quantityInput-<%= product.id %>" min="1" value="1" style="width:70px;">
+                                            </div>
+
+                                            <button class="orderButtons" onclick="addProductWithAddons('<%= product.id %>')">
+                                                Add to Order
+                                            </button>
+                                        </div>
+                                    </div>
+                                </li>
+                            <% }); %>
+                        </ul>
+                        
+                    </div>
+                <% } else { %>
+                    <p>No products found for the selected category.</p>
+                <% } %>
+            <% } %>
+        </div>
+
+        <!-- Order Summary -->
+         <div class="order-summary">
+            <h2>Order Summary</h2>
+            <ul id="order-list" style="list-style-position: inside;"></ul>
+            <p style="margin-top: 20px;">Subtotal: $<span id="subtotal">0.00</span></p>
+            <p>Tax (8.25%): $<span id="tax">0.00</span></p>
+            <p>Total: $<span id="total">0.00</span></p>
+            <button class="checkout"onclick="checkoutOrder()">Checkout</button>
+        </div>
+        <button class="clear-order" onclick="clearOrder()">Clear Order</button>
+        <button class="cancel-order" onclick="clearOrder(); window.location.href='/employee'">Cancel Order</button>
+    </div>
+
+    <script type="module" src="/langSelect.js"></script>
+    <script src="/index.js"></script>
+
+    <div id="confirmModal" class="modal-order hidden">
+        <div class="modal-order-content">
+            <h2>Confirm Your Order</h2>
+            <ul id="confirm-order-list" style="list-style-position: inside;  text-align: left; margin-top: 10px;"></ul>
+            <p style="margin-top: 20px;">Subtotal: $<span id="confirm-subtotal">0.00</span></p>
+            <p>Tax: $<span id="confirm-tax">0.00</span></p>
+            <p style="font-weight: 700;">Total: $<span id="confirm-total">0.00</span></p>
+
+            <% if (user) { %>
+            <p style="margin-top: 20px;">Points gained by purchase: <span id="confirm-totalToPoints">0.00</span> points</p>
+            <p>Your current points: <span id="confirm-points">0.00</span></p>
+            <% } %>
+
+            <form class="form" style="margin-top: 20px;" novalidate>
+                <% if (user) { %>
+                    <label for="email" class="visually-hidden" style="margin-bottom: -10px; margin-left: 10px; text-align: left;">Optional Email (to recieve reciept):</label>
+                    <input id="emailField" name="email" type="email" placeholder="Email" value="<%- user.email %>" />
+                <% } else { %>
+                    <label for="email" class="visually-hidden" style="margin-bottom: -10px; margin-left: 10px; text-align: left;">Optional Email (to recieve reciept):</label>
+                    <input id="emailField" name="email" type="email" placeholder="Email" />
+                <% } %>
+                    
+                <div class="modal-order-buttons">
+                    <button id="confirmYes" type="button" style="padding: 8px 16px; border: none; background: #d9534f; color: white; border-radius: 6px; cursor: pointer;">Confirm</button>
+                    
+                    <!-- <% if (user) { %>
+                        <button id="confirmPoints" type="button" style="padding: 8px 16px; border: none; background: #d9534f; color: white; border-radius: 6px; cursor: pointer;">Use Points</button>
+                    <% } else { %>
+                        <button type="button" style="padding: 8px 16px; border: none; background: #aaa; color: white; border-radius: 6px; cursor: not-allowed;" disabled>
+                            Log in to Use Points
+                        </button>
+                    <% } %> -->
+
+                    <button id="confirmNo" type="button" style="padding: 8px 16px; border: 1px solid #ccc; background: white; border-radius: 6px; cursor: pointer;">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="pointsModal" class="modal-order hidden">
+        <div class="modal-order-content">
+            <h2>Use Points?</h2>
+            <p>Order total: $<span id="points-order-total">0.00</span></p>
+            <p>Your current points: <span id="points-current">0</span></p>
+            <p>Points that will be used: <span id="points-used">0</span></p>
+            <p>New total after points: $<span id="points-new-total">0.00</span></p>
+            <p>Points remaining: <span id="points-remaining">0</span></p>
+
+            <div class="modal-order-buttons">
+            <button id="pointsConfirmYes" style="padding: 8px 16px; border: none; background: #d9534f; color: white; border-radius: 6px; cursor: pointer;">Apply Points</button>
+            <button id="pointsConfirmNo" style="padding: 8px 16px; border: 1px solid #ccc; background: white; border-radius: 6px; cursor: pointer;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
