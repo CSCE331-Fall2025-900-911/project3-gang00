@@ -389,6 +389,7 @@ input:focus{
     max-height: 1000px;
     opacity: 1;
     padding: 10px;
+    overflow-y: auto;
 }
 
 .order-summary {
@@ -1221,6 +1222,30 @@ select[type="category"]{
   }
 }
 
+.trackResult {
+  margin-top: 32px;
+  display: flex;
+  justify-content: center;
+}
+
+.trackResult .card {
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 24px 32px;
+  max-width: 40rem;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.trackResult .card p,
+.trackResult .card li,
+.trackResult .card strong {
+  color: #000000;
+}
+
+.trackResult .card ul {
+  margin-top: 8px;
+  margin-left: 1.25rem;
+}
 .menu-container {
   max-width: 1200px;
   margin: 24px auto;

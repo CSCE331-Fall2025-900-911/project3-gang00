@@ -687,9 +687,8 @@ app.post('/checkout', async (req, res) => {
     return res.status(400).json({ success: false, message: 'Invalid subtotal.' });
   }
 
-  let items = [];
-
   const client = await pool.connect();
+  const items = [];
   try {
     await client.query('BEGIN');
 
@@ -713,7 +712,7 @@ app.post('/checkout', async (req, res) => {
     let previousItemID = null;
     let previousOrderItemID = null;
     for (const item of orderItems) {
-      const { productId, productPrice, item_count = 1, isAddon = false } = item;
+      const { productId, productPrice, productName, item_count = 1, isAddon = false } = item;
 
       if (isAddon) {
 
@@ -747,12 +746,7 @@ app.post('/checkout', async (req, res) => {
             WHERE order_item_id = $2`,
             [newAddonString, previousOrderItemID]
           );
-
-          // add item to list to pass to email template
-          const productItem = { product_name: " + " + addonName, product_price: productPrice };
-          items.push(productItem);
         }
-        
         continue;
       } else {
         previousItemID = productId;
@@ -761,11 +755,6 @@ app.post('/checkout', async (req, res) => {
       if (!productId || isNaN(productPrice)) {
         throw new Error(`Invalid item: ${JSON.stringify(item)}`);
       }
-
-      const productResult = await client.query(
-        `SELECT product_name FROM products WHERE product_id = $1`, [productId]
-      );
-      const product_name = productResult.rows[0].product_name;
 
       // Reduce ingredient quantities for this product (except Water)
       const ingRes = await client.query(
@@ -796,7 +785,7 @@ app.post('/checkout', async (req, res) => {
       previousOrderItemID = orderItemResult.rows[0].order_item_id;
 
       // add item to list to pass to email template
-      const productItem = { product_name: product_name, product_price: productPrice };
+      const productItem = { product_name: productName, product_price: productPrice, qty: item_count };
       items.push(productItem);
     }
 
@@ -821,7 +810,7 @@ app.post('/checkout', async (req, res) => {
     }
 
     await client.query('COMMIT');
-    return res.json({ success: true, order_id });
+    res.json({ success: true, order_id });
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('Checkout error:', err);
