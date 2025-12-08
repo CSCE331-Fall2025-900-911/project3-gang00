@@ -301,6 +301,70 @@ app.post('/contact', async (req,res)=>{
   }
 });
 
+// Track the order
+app.get('/trackOrder', (req,res) => {
+  res.render('trackOrder', {
+    user: req.user || null,
+    order: null,
+    notFound: false,
+    inputOrderId: ''
+  });
+
+})
+
+// Track and return the result
+app.post('/track', async (req, res) => {
+  try {
+    let { orderNumber } = req.body;
+    orderNumber = (orderNumber || '').trim();
+
+    if (!orderNumber || isNaN(Number(orderNumber))) {
+      return res.render('trackOrder', {
+        user: req.user || null,
+        order: null,
+        orders :[],
+        notFound: true,
+        inputOrderId: orderNumber
+      });
+    }
+
+    const idNum = Number(orderNumber);
+
+    const result = await pool.query(
+      `SELECT o.order_id, o.sub_total, o.date_time, o.iscompleted, p.product_name, oi.qty
+       FROM orders o join orderitems oi on o.order_id = oi.order_id join products p on oi.product_id = p.product_id
+       WHERE o.order_id = $1`,
+      [idNum]
+    );
+
+    if (result.rows.length === 0) {
+      return res.render('trackOrder', {
+        user: req.user || null,
+        order: null,
+        orders :[],
+        notFound: true,
+        inputOrderId: orderNumber
+      });
+    }
+
+    let orders = result.rows;
+    let order = orders[0];
+
+    res.render('trackOrder', {
+      user: req.user || null,
+      order,
+      orders,
+      notFound: false,
+      inputOrderId: orderNumber
+    });
+
+  } catch (err) {
+    console.error('track order error:', err);
+    res.status(500).send('Server error while tracking order');
+  }
+
+})
+
 // Employee sign in attempt (passport)
 app.post('/employee-sign-in/attempt', (req, res) => {
   passport.authenticate('employee-local', (err, user, info) => {
