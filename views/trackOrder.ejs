@@ -11,10 +11,10 @@
         <%- include('partials/kioskNavBar') %>
         <%- include('partials/logoutModal') %>
     </div>
-
-    <main>
+    <div class="contactUs">
+      <main>
         <section>
-            <form action="/track" method="POST" class="trackGrid">
+            <form action="/track" method="POST" class="contactGrid">
                 <input type="text" name="orderNumber" placeholder="Your order number" value="<%= inputOrderId || '' %>" required/>
                 <button type="submit">Track</button>
             </form>
@@ -25,22 +25,24 @@
             <div class="card">
               <p><strong>Order ID:</strong> <%= order.order_id %></p>
 
+              <% const timeStr = order.date_time && order.date_time.toLocaleString('en-US'); %>
               <% if (order.iscompleted) { %>
                 <p><strong>Status:</strong> Completed</p>
-                <p><strong>Completed at:</strong> <%= order.date_time %></p>
+                <p><strong>Completed at:</strong> <%= timeStr %></p>
               <% } else { %>
                 <p><strong>Status:</strong> Not completed yet</p>
-                <p><strong>Placed at:</strong> <%= order.date_time %></p>
+                <p><strong>Placed at:</strong> <%= timeStr %></p>
               <% } %>
 
-              <p><strong>Subtotal:</strong> $<%= order.sub_total %></p>
-              <p><strong>Product:</strong> 
+              <p><strong>Order Items:</strong> 
                 <ul>
                     <% orders.forEach(row => { %>
                       <li><%= row.product_name %> * <%= row.qty %></li>
                     <% }) %>
                 </ul>
               </p>
+              <br>
+              <p><strong>Subtotal:</strong> $<%= order.sub_total %></p>
 
             </div>
           <% } else if (notFound) { %>
@@ -48,6 +50,8 @@
           <% } %>
         </section>
     </main>
+    </div>
+
     <script type="module" src="/langSelect.js"></script>
     <script src="/index.js"></script>
     <script src="/accountDropdown.js"></script>

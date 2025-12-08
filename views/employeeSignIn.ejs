@@ -9,13 +9,17 @@
 <body>
     <div>
         <nav class="navbar">
-            <div class="logo">
-                <a href="/">
-                    <img src="/ShareTea_logo.webp" alt="ShareTea Logo" class="logo-img">
-                </a>
+            <div style="display: flex; flex-direction: row; align-items: center;">
+                <a href="/" style="margin-left: 10px; margin-right: 20px;"><img src="/img/management/arrow-left.png" class="back-arrow"></a>
+                <div>
+                    <p1 style="font-weight: 500;">Employee</p1>
+                    <h1 style="font-size: 50px; font-weight: 600; margin-top: -15px;">Sign-In</h1>
+                </div>
             </div>
             <ul class="nav-links">
-                <li><a href="/">Back To Kiosk</a></li>
+                <button class="speaker-btn" id="textToSpeechBtn">
+                    <img src="/Muted.png" alt="Text-to-Speech" class="TextToSpeech-img" id="speakerImg">
+                </button>
                 <li class="lang-dropdown no-translate">
                     <button class="translate-btn" id="translateBtn">
                         <img src="/Translate.png" alt="Translate" class="Translate-img" id="translateImg">

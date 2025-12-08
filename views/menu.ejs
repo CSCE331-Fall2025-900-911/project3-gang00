@@ -113,9 +113,37 @@
 </head>
 
 <body>
-  <%- include('partials/kioskNavBar') %>
-
-  <%- include('partials/logoutModal') %>
+  <nav class="navbar" style="padding: 10px;">
+    <div style="display: flex; flex-direction: row; align-items: center;">
+        <a href="/kiosk" style="margin-left: 10px; margin-right: 20px;"><img src="/img/management/arrow-left.png" class="back-arrow"></a>
+        <div>
+            <p1 style="font-weight: 500;">Kiosk</p1>
+            <h1 style="font-size: 50px; font-weight: 600; margin-top: -15px;">Menu</h1>
+        </div>
+        
+    </div>
+    <ul class="nav-links">
+        <li>
+            <button class="speaker-btn" id="textToSpeechBtn">
+                <img src="/Muted.png" alt="Text-to-Speech" class="TextToSpeech-img" id="speakerImg">
+            </button>
+        </li>
+        <li class="lang-dropdown no-translate">
+            <button class="translate-btn" id="translateBtn">
+                <img src="/Translate.png" alt="Translate" class="Translate-img" id="translateImg">
+            </button>
+            <div id="langMenu" class="lang-menu hidden">
+                <select id="langSel" aria-label="Select language">
+                    <option value="en" selected>English</option>
+                    <option value="zh">中文</option>
+                    <option value="es">Español</option>
+                    <option value="fr">Français</option>
+                    <option value="ja">日本語</option>
+                </select>
+            </div>
+        </li>
+    </ul>
+</nav>
 
   <main class="menu-container" style="overflow-y: auto;">
     <div class="toolbar">
@@ -145,8 +173,6 @@
       <p>No menu items found.</p>
     <% } %>
   </main>
-
-  <a href="/" class="cancel-order">Back to Home</a>
 
   <script>
     // ---------- Font size controls ----------

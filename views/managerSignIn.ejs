@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <head>
-    <title>Employee Sign-In</title>
+    <title>Manager Sign-In</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -8,11 +8,11 @@
 </head>
 <body>
     <div>
-        <nav class="navbar" style="padding: 10px;">
+        <nav class="navbar">
             <div style="display: flex; flex-direction: row; align-items: center;">
-                <a href="/kiosk" style="margin-left: 10px; margin-right: 20px;"><img src="/img/management/arrow-left.png" class="back-arrow"></a>
+                <a href="/" style="margin-left: 10px; margin-right: 20px;"><img src="/img/management/arrow-left.png" class="back-arrow"></a>
                 <div>
-                    <p1 style="font-weight: 500;">Kiosk</p1>
+                    <p1 style="font-weight: 500;">Manager</p1>
                     <h1 style="font-size: 50px; font-weight: 600; margin-top: -15px;">Sign-In</h1>
                 </div>
             </div>
@@ -37,35 +37,27 @@
             </ul>
         </nav>
         <div class="signin-container">
-            <section class="signin-card" aria-labelledby="signin-title" style="height: 460px;">
+            <section class="signin-card" aria-labelledby="signin-title" style="height: 350px;">
                 <div class="brand"> 
-                    <h1 id="signin-title">Customer Sign-In Page</h1>
-                    <p class="subtitle">Sign in to continue browsing!</p>
+                    <h1 id="signin-title">Sign-In Page</h1>
+                    <p class="subtitle">Sign in to continue to the manager interface</p>
                 </div>
 
                 <form id="signin-form" class="form" novalidate>
-                    <label for="email" class="visually-hidden">Email Address</label>
-                    <input id="email" name="email" type="email" placeholder="Email" />
+                    <label for="username" class="visually-hidden">Username</label>
+                    <input id="username" name="username" type="username" placeholder="Username" />
 
                     <label for="password" class="visually-hidden">Password</label>
                     <div class="password-row">
                         <input id="password" name="password" type="password" placeholder="Password" />
                     </div>
-                    
-                    <p class="subtitle" style="text-align: center;">Don't have an account? <a href="/customer-sign-up">Sign up</a></p>
 
                     <button type="submit" class="primary">Sign in</button>
-                    
                 </form>
-                <div class="brand">
-                    <p class="subtitle">or</p>
-                    <button id="googleButton" href="/google/auth"><img src="/google-logo-icon.png" style="height: 20px;"> Sign in with Google</button>
-                </div>
             </section>
         </div>
     </div>
     <script type="module" src="/langSelect.js"></script>
     <script src="/index.js"></script>
-    <script src="/customerSignIn.js"></script>
-    <script src="/tts.js"></script>
+    <script src="/managerSignIn.js"></script>
 </body>

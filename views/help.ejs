@@ -8,8 +8,37 @@
 </head>
 <body>
     <div>
-        <%- include('partials/kioskNavBar') %>
-        <%- include('partials/logoutModal') %>
+        <nav class="navbar" style="padding: 10px;">
+            <div style="display: flex; flex-direction: row; align-items: center;">
+                <a href="/kiosk" style="margin-left: 10px; margin-right: 20px;"><img src="/img/management/arrow-left.png" class="back-arrow"></a>
+                <div>
+                    <p1 style="font-weight: 500;">Kiosk</p1>
+                    <h1 style="font-size: 50px; font-weight: 600; margin-top: -15px;">Help</h1>
+                </div>
+                
+            </div>
+            <ul class="nav-links">
+                <li>
+                    <button class="speaker-btn" id="textToSpeechBtn">
+                        <img src="/Muted.png" alt="Text-to-Speech" class="TextToSpeech-img" id="speakerImg">
+                    </button>
+                </li>
+                <li class="lang-dropdown no-translate">
+                    <button class="translate-btn" id="translateBtn">
+                        <img src="/Translate.png" alt="Translate" class="Translate-img" id="translateImg">
+                    </button>
+                    <div id="langMenu" class="lang-menu hidden">
+                        <select id="langSel" aria-label="Select language">
+                            <option value="en" selected>English</option>
+                            <option value="zh">中文</option>
+                            <option value="es">Español</option>
+                            <option value="fr">Français</option>
+                            <option value="ja">日本語</option>
+                        </select>
+                    </div>
+                </li>
+            </ul>
+        </nav>
     </div>
     <div class="contactUs">
         <h1>Help Page</h1>
@@ -17,23 +46,23 @@
 
     <!--Start of FAQ section -->
     <main>
-        <div class="contactUs">
-            <section>
+        <section class ="contactUs">
             <h2>Frequently Asked Questions</h2>
-            <div id="faqList">
-                <% faqs.forEach((item, i) => { %>
-                <details class="faq">
-                    <summary>
-                        <%= item.q %>
-                    </summary>
-                    <div class="muted">
-                        <%= item.a %>
-                    </div>
-                </details>
-                <% }) %>
+            <div class="contactUs">
+                <div id="faqList">
+                    <% faqs.forEach((item, i) => { %>
+                    <details class="faq">
+                        <summary style="cursor: pointer;">
+                            <%= item.q %>
+                        </summary>
+                        <div class="muted">
+                            <%= item.a %>
+                        </div>
+                    </details>
+                    <% }) %>
+                </div>
             </div>
-            </section>
-        </div>
+        </section>
 
         <!--Contact Us Section-->
         <section class ="contactUs">
@@ -47,6 +76,7 @@
             <div><strong>Email:</strong> <a href="mailto:<%= site.supportEmail %>"><%= site.supportEmail %></a></div>
             <div><strong>Phone:</strong> <a href="tel:+15551234567"><%= site.supportPhone %></a></div>
             <div><strong>Support Hours:</strong> <%= site.supportHours %></div>
+            <div><strong>Address: </strong><%= site.address%></div>
 
             <br />
 
@@ -69,4 +99,5 @@
     <script src="/index.js"></script>
     <script src="/accountDropdown.js"></script>
     <script src="/weather.js"></script>
+    <script src="/tts.js"></script>
 </body>
