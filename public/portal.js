@@ -21,3 +21,8 @@ form.addEventListener('submit', e => {
         form.reportValidity();
     }
 });
+
+window.onload = function() {
+    // load the current style into window
+    this.localStorage.setItem('styleName', "styles.css");
+}
