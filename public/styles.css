@@ -389,6 +389,7 @@ input:focus{
     max-height: 1000px;
     opacity: 1;
     padding: 10px;
+    overflow-y: auto;
 }
 
 .order-summary {
