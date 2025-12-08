@@ -13,6 +13,15 @@ const LocalStrategy = require('passport-local').Strategy;
 
 const WEATHER_API_KEY = process.env.WEATHER_API_KEY;
 
+const { Vonage } = require('@vonage/server-sdk');
+const fs = require('fs');
+
+const vonage = new Vonage({
+ applicationId: process.env.VONAGE_APPLICATION_ID,
+ privateKey: process.env.VONAGE_PRIVATE_KEY
+});
+
+
 // ---- App Setup ----
 const app = express();
 const port = process.env.PORT || 3000;
@@ -139,6 +148,10 @@ passport.use('employee-local', new LocalStrategy(
 
 // Home
 app.get('/', (req, res) => {
+  res.render('portal');
+});
+
+app.get('/kiosk', (req, res) => {
   if (req.isAuthenticated() && (req.user.customer_id !== undefined)) {
     return res.render('index', { user: req.user });
   }
@@ -147,6 +160,7 @@ app.get('/', (req, res) => {
 
 // Sign-in/Sign-up pages
 app.get('/employee-sign-in', (req, res) => res.render('employeeSignIn'));
+app.get('/manager-sign-in', (req, res) => res.render('managerSignIn'));
 app.get('/general-sign-in', (req, res) => res.render('generalSignIn'));
 app.get('/customer-sign-in', (req, res) => res.render('customerSignIn'));
 app.get('/customer-sign-up', (req, res) => res.render('customerSignUp'));
@@ -185,7 +199,7 @@ app.get('/manager/check-credentials', (req, res) => {
 app.get('/manager', (req, res) => {
   if (!req.isAuthenticated()) {
     // User not logged in at all
-    return res.redirect('/employee-sign-in');
+    return res.redirect('/manager-sign-in');
   }
   if (req.user.employee_id === undefined) {
     // logged in but not as an employee
@@ -238,6 +252,7 @@ app.get('/help', (req, res) => {
     supportEmail: 'support@sharetea.mcgowan',
     supportPhone: '(555) 123-4567',
     supportHours: 'Daily 10 AM - 8 PM',
+    address: 'Zachry Engineering Center, 125 Spence St, College Station, TX 77840'
   };
   const faqs = [
     { q: 'How do I place an order?', a: 'Go to the Order page, pick items, customize, and checkout.' },
@@ -285,6 +300,70 @@ app.post('/contact', async (req,res)=>{
     res.status(500).send('Server error');
   }
 });
+
+// Track the order
+app.get('/trackOrder', (req,res) => {
+  res.render('trackOrder', {
+    user: req.user || null,
+    order: null,
+    notFound: false,
+    inputOrderId: ''
+  });
+
+})
+
+// Track and return the result
+app.post('/track', async (req, res) => {
+  try {
+    let { orderNumber } = req.body;
+    orderNumber = (orderNumber || '').trim();
+
+    if (!orderNumber || isNaN(Number(orderNumber))) {
+      return res.render('trackOrder', {
+        user: req.user || null,
+        order: null,
+        orders :[],
+        notFound: true,
+        inputOrderId: orderNumber
+      });
+    }
+
+    const idNum = Number(orderNumber);
+
+    const result = await pool.query(
+      `SELECT o.order_id, o.sub_total, o.date_time, o.iscompleted, p.product_name, oi.qty
+       FROM orders o join orderitems oi on o.order_id = oi.order_id join products p on oi.product_id = p.product_id
+       WHERE o.order_id = $1`,
+      [idNum]
+    );
+
+    if (result.rows.length === 0) {
+      return res.render('trackOrder', {
+        user: req.user || null,
+        order: null,
+        orders :[],
+        notFound: true,
+        inputOrderId: orderNumber
+      });
+    }
+
+    let orders = result.rows;
+    let order = orders[0];
+
+    res.render('trackOrder', {
+      user: req.user || null,
+      order,
+      orders,
+      notFound: false,
+      inputOrderId: orderNumber
+    });
+
+  } catch (err) {
+    console.error('track order error:', err);
+    res.status(500).send('Server error while tracking order');
+  }
+
+})
 
 // Employee sign in attempt (passport)
 app.post('/employee-sign-in/attempt', (req, res) => {
@@ -415,7 +494,7 @@ app.get('/customer/logout', (req, res) => {
 app.get('/google/auth', passport.authenticate('google', { scope: ['profile', 'email'] }));
 app.get('/customer-sign-in/google/callback',
   passport.authenticate('google', { failureRedirect: '/' }),
-  (req, res) => res.redirect('/')
+  (req, res) => res.redirect('/kiosk')
 );
 
 // View Profile
@@ -425,21 +504,6 @@ app.get('/profile', (req, res) => {
   }
   res.redirect('/');
 })
-
-// Contact page
-app.get('/contact', (req, res) => {
-  const site = {
-    brand: 'Sharetea',
-    supportEmail: 'support@sharetea.mcgowan',
-    supportPhone: '(555) 123-4567',
-    supportHours: 'Daily 10 AM - 8 PM',
-    address: 'Zachry Engineering Center, 125 Spence St, College Station, TX 77840',
-  };
-  if (req.isAuthenticated() && (req.user.customer_id !== undefined)) {
-    return res.render('contact', { site: site, user: req.user });
-  }
-  res.render('contact', { site: site, user: null });
-});
 
 // Example DB page
 app.get('/user', async (req, res) => {
@@ -545,7 +609,11 @@ app.get('/order', async (req, res) => {
 
 // -------- Checkout Route --------
 app.post('/checkout', async (req, res) => {
-  const { orderItems, subtotal, points} = req.body;
+  const { orderItems, subtotal, currentPoints, pointsRedeemed, pointsEarned, email} = req.body;
+
+  if (!email) {
+    return res.status(400).json({ success: false, message: 'Enter an email to recieve your reciept!' });
+  }
 
   // Validate input
   if (!Array.isArray(orderItems) || orderItems.length === 0) {
@@ -558,6 +626,7 @@ app.post('/checkout', async (req, res) => {
   }
 
   const client = await pool.connect();
+  const items = [];
   try {
     await client.query('BEGIN');
 
@@ -581,7 +650,7 @@ app.post('/checkout', async (req, res) => {
     let previousItemID = null;
     let previousOrderItemID = null;
     for (const item of orderItems) {
-      const { productId, productPrice, item_count = 1, isAddon = false } = item;
+      const { productId, productPrice, productName, item_count = 1, isAddon = false } = item;
 
       if (isAddon) {
 
@@ -653,20 +722,29 @@ app.post('/checkout', async (req, res) => {
       );
       previousOrderItemID = orderItemResult.rows[0].order_item_id;
 
-      //update user points if user exists
+      // add item to list to pass to email template
+      const productItem = { product_name: productName, product_price: productPrice, qty: item_count };
+      items.push(productItem);
+    }
+
+          //update user points if user exists
       if(req.isAuthenticated() && req.user.customer_id != undefined){
         const result = await client.query(
         `UPDATE customers 
-         SET points = points + $1
+         SET points = $1
          WHERE "email" = $2
          RETURNING points;`,
-         [points, req.user.email]
+         [currentPoints, req.user.email]
         );
 
         const newPoints = result.rows[0].points;
         req.user.points = newPoints;
       }
 
+    // now send email with order reciept to customer (if specified)
+    if (email !== null) {
+      const htmlContent = buildReceiptHtml(order_id, items, subtotal);
+      await sendEmail(email, "Your ShareTea Reciept", htmlContent);
     }
 
     await client.query('COMMIT');
@@ -706,18 +784,83 @@ app.get('/employee/kitchen', async (req, res) => {
 });
 
 app.post('/employee/kitchen/complete-order', async (req, res) => {
-  if (req.isAuthenticated() && req.user.employee_id !== undefined) {
-    const order_id = req.body.order_id;
-    try {
-      await pool.query('UPDATE orders SET isCompleted = TRUE WHERE order_id = $1', [order_id]);
-      return res.json({ success: true });
-    } catch (err) {
-      console.error('DB error:', err);
-      return res.status(500).send('Database query failed');
-    }
+  // Auth guard
+  if (!(req.isAuthenticated() && req.user.employee_id !== undefined)) {
+    return res.status(401).json({ success: false, message: 'Unauthorized' });
   }
-  result.redirect('/employee/kitchen');
-});
+ 
+ 
+  const { order_id } = req.body;
+ 
+ 
+  try {
+    // 1) Mark order as completed in DB
+    await pool.query('UPDATE orders SET isCompleted = TRUE WHERE order_id = $1', [order_id]);
+ 
+ 
+    // 2) Place the phone call with Vonage
+    const TO_NUMBER = process.env.VOICE_TO_NUMBER;
+    const FROM_NUMBER = process.env.VONAGE_VIRTUAL_NUMBER;
+ 
+ 
+    const resp = await vonage.voice.createOutboundCall({
+      to: [
+        {
+          type: "phone",
+          number: TO_NUMBER,
+        },
+      ],
+      from: {
+        type: "phone",
+        number: FROM_NUMBER,
+      },
+      ncco: [
+        {
+          action: "talk",
+          text: `<speak><break time="1s"/>Hello! Your order number ${order_id} is ready for pickup.<break time="1s"/></speak>`,
+        },
+      ],
+     
+    });
+ 
+ 
+    console.log("Call created successfully:");
+    console.log(JSON.stringify(resp, null, 2));
+ 
+ 
+    // 3) Respond to the frontend ONCE
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Error completing order / calling customer:', err);
+    return res.status(500).json({
+      success: false,
+      message: 'Database or phone call failed',
+    });
+  }
+ });
+ 
+ 
+ app.post('/employee/kitchen/delete-order', async (req, res) => {
+  if (!(req.isAuthenticated() && req.user.employee_id !== undefined)) {
+    return res.status(401).json({ success: false, message: 'Unauthorized' });
+  }
+ 
+ 
+  const { order_id } = req.body;
+ 
+ 
+  try {
+    await pool.query('DELETE FROM orderitems WHERE order_id = $1;', [order_id]);
+    await pool.query('DELETE FROM orders WHERE order_id = $1;', [order_id]);
+ 
+ 
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Delete order error:', err);
+    return res.status(500).json({ success: false, message: 'Database query failed' });
+  }
+ });
+ 
 
 // -------- Translation setup (unused but harmless) --------
 const TRANSLATE_ENABLED = (process.env.TRANSLATE_ENABLED || 'false') === 'true';

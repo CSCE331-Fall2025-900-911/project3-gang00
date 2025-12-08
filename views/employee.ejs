@@ -8,12 +8,20 @@
 </head>
 <body>
     <nav class="navbar" style="padding: 10px 10px;">
-        <div>
-            <h1 style="font-size: 50px; font-weight: 600; margin-left: 20px;">Employees</h1>
+        <div style="display: flex; flex-direction: row; align-items: center;">
+            <% if (user) { %>
+                <a href="javascript:void(0)" style="margin-left: 10px; margin-right: 20px;" onclick="openLogoutModal()">
+                    <img src="/img/management/arrow-left.png" class="back-arrow">
+                </a>
+            <% } else { %>
+                <a href="/" style="margin-left: 10px; margin-right: 20px;"><img src="/img/management/arrow-left.png" class="back-arrow"></a>
+            <% } %>
+            <div>
+                <p1 style="font-weight: 500;">ShareTea</p1>
+                <h1 style="font-size: 50px; font-weight: 600; margin-top: -15px;">Employees</h1>
+            </div>
         </div>
         <ul class="nav-links">
-            <li><a href="javacript:void(0)" onclick="goToManager()" style="display: flex; align-items: center; gap: 8px;"><img src="/accountant.png" style="height: 40px;">Managers</a></li>
-            
             <!-- Account Dropdown -->
             <li style="position: relative;">
                 <a href="javascript:void(0)" onclick="toggleAccountDropDown()" style="display: flex; align-items: center; gap: 8px;">

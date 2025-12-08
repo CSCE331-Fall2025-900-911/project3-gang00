@@ -1,13 +1,22 @@
-<nav class="navbar">
-    <div class="logo">
-        <a href="/">
-            <img src="/ShareTea_logo.webp" alt="ShareTea Logo" class="logo-img">
-        </a>
+<nav class="navbar" style="padding: 10px;">
+    <div style="display: flex; flex-direction: row; align-items: center;">
+        <% if (user) { %>
+            <a href="javascript:void(0)" onclick="openLogoutModal()">
+                <img src="/img/management/arrow-left.png" class="back-arrow">
+            </a>
+        <% } else { %>
+            <a href="/" style="margin-left: 10px; margin-right: 20px;"><img src="/img/management/arrow-left.png" class="back-arrow"></a>
+        <% } %>
+        <div>
+            <p1 style="font-weight: 500;">ShareTea</p1>
+            <h1 style="font-size: 50px; font-weight: 600; margin-top: -15px;">Kiosk</h1>
+        </div>
+        
     </div>
     <ul class="nav-links">
+        <li><a href="/trackOrder">TrackOrder</a></li>
         <li><a href="/menu">Menu</a></li>
         <li><a href="/help">Help</a></li>
-        <li><a href="/contact">Contact</a></li>
 
         <li class="weather-dropdown">
         <button class="weather-btn" id="weatherBtn" aria-expanded="false" aria-controls="weatherPanel">
@@ -35,16 +44,6 @@
             <button class="speaker-btn" id="textToSpeechBtn">
                 <img src="/Muted.png" alt="Text-to-Speech" class="TextToSpeech-img" id="speakerImg">
             </button>
-            <!-- Does tts need the language dropdown list to choose a language? -->
-            <!-- <div id="langMenu" class="lang-menu hidden">
-                <select id="langSel" aria-label="Select language">
-                    <option value="en" selected>English</option>
-                    <option value="zh">中文</option>
-                    <option value="es">Español</option>
-                    <option value="fr">Français</option>
-                    <option value="ja">日本語</option>
-                </select>
-            </div> -->
         </li>
         <li class="lang-dropdown no-translate">
             <button class="translate-btn" id="translateBtn">
@@ -75,7 +74,7 @@
                 </ul>
             </li>
         <% } else { %>
-            <li><a href="/general-Sign-In">Sign in</a></li>
+            <li><a href="/customer-sign-in">Sign in</a></li>
         <% } %>
     </ul>
 </nav>
