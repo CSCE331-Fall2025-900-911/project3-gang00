@@ -625,9 +625,8 @@ app.post('/checkout', async (req, res) => {
     return res.status(400).json({ success: false, message: 'Invalid subtotal.' });
   }
 
-  let items = [];
-
   const client = await pool.connect();
+  const items = [];
   try {
     await client.query('BEGIN');
 
@@ -651,7 +650,7 @@ app.post('/checkout', async (req, res) => {
     let previousItemID = null;
     let previousOrderItemID = null;
     for (const item of orderItems) {
-      const { productId, productPrice, item_count = 1, isAddon = false } = item;
+      const { productId, productPrice, productName, item_count = 1, isAddon = false } = item;
 
       if (isAddon) {
 
@@ -685,12 +684,7 @@ app.post('/checkout', async (req, res) => {
             WHERE order_item_id = $2`,
             [newAddonString, previousOrderItemID]
           );
-
-          // add item to list to pass to email template
-          const productItem = { product_name: " + " + addonName, product_price: productPrice };
-          items.push(productItem);
         }
-        
         continue;
       } else {
         previousItemID = productId;
@@ -699,11 +693,6 @@ app.post('/checkout', async (req, res) => {
       if (!productId || isNaN(productPrice)) {
         throw new Error(`Invalid item: ${JSON.stringify(item)}`);
       }
-
-      const productResult = await client.query(
-        `SELECT product_name FROM products WHERE product_id = $1`, [productId]
-      );
-      const product_name = productResult.rows[0].product_name;
 
       // Reduce ingredient quantities for this product (except Water)
       const ingRes = await client.query(
@@ -734,7 +723,7 @@ app.post('/checkout', async (req, res) => {
       previousOrderItemID = orderItemResult.rows[0].order_item_id;
 
       // add item to list to pass to email template
-      const productItem = { product_name: product_name, product_price: productPrice };
+      const productItem = { product_name: productName, product_price: productPrice, qty: item_count };
       items.push(productItem);
     }
 
@@ -759,7 +748,7 @@ app.post('/checkout', async (req, res) => {
     }
 
     await client.query('COMMIT');
-    return res.json({ success: true, order_id });
+    res.json({ success: true, order_id });
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('Checkout error:', err);
@@ -768,55 +757,6 @@ app.post('/checkout', async (req, res) => {
     client.release();
   }
 });
-
-function buildReceiptHtml(orderId, items, subtotal) {
-  const itemsHtml = items.map(item =>
-    `<tr>
-      <td>${item.product_name}</td>
-      <td style="text-align:right;">$${item.product_price.toFixed(2)}</td>
-    </tr>`
-  ).join("");
-
-  return `
-    <h2>Receipt for Order #${orderId}</h2>
-    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;">
-      <thead>
-        <tr>
-          <th>Item/Add-on</th>
-          <th>Price</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${itemsHtml}
-      </tbody>
-    </table>
-    <p><strong>Total: $${subtotal.toFixed(2)}</strong></p>
-    <p>Thank you for your order!</p>
-  `;
-}
-
-async function sendEmail(toEmail, subject, htmlContent) {
-  const MAILGUN_DOMAIN = "mg.sharetea.store"; // domain that I acquired    
-  const MAILGUN_API_KEY = process.env.EMAIL_API_KEY;    // Mailgun private API key
-
-  const params = new URLSearchParams();
-  params.append("from", "ShareTea POS <no-reply@mg.sharetea.store>");
-  params.append("to", toEmail);
-  params.append("subject", subject);
-  params.append("html", htmlContent);
-
-  const res = await fetch(`https://api.mailgun.net/v3/${MAILGUN_DOMAIN}/messages`, {
-    method: "POST",
-    headers: {
-      "Authorization": "Basic " + Buffer.from(`api:${MAILGUN_API_KEY}`).toString("base64"),
-      "Content-Type": "application/x-www-form-urlencoded"
-    },
-    body: params
-  });
-
-  const data = await res.text(); 
-  console.log("Mailgun response:", data);
-}
 
 // -------- Kitchen Routes -------- //
 app.get('/employee/kitchen', async (req, res) => {

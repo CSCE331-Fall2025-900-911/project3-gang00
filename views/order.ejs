@@ -246,13 +246,12 @@
 
         function addProductWithAddons(productId) {
 
-            // selectedProduct stored when addons panel is opened
-            const selectedProduct = JSON.parse(localStorage.getItem('selectedProduct'));
+           const selectedProduct = JSON.parse(localStorage.getItem('selectedProduct'));
             const product = selectedProduct && String(selectedProduct.id) === String(productId)
                 ? selectedProduct
                 : null;
+
             if (!product) {
-                // fallback: sometimes we call addProductWithAddons without selectedProduct, abort safely
                 console.warn('No selectedProduct found for productId', productId);
                 return;
             }
@@ -263,7 +262,7 @@
 
             const sizeSelect = document.getElementById(`sizeOption-${productId}`);
             const size = sizeSelect.value;
-            const sizeUpcharge = parseFloat(sizeSelect.selectedOptions[0].dataset.price);   
+            const sizeUpcharge = parseFloat(sizeSelect.selectedOptions[0].dataset.price);
 
             const qtyInput = document.getElementById(`quantityInput-${productId}`);
             const quantity = Math.max(1, parseInt(qtyInput?.value || '1', 10));
@@ -271,8 +270,8 @@
             const addonsSection = document.getElementById(`addons-section-${productId}`);
             const selectedAddons = Array.from(addonsSection.querySelectorAll('.addon-checkbox:checked'));
 
-            // Add product + addons for each quantity unit
             for (let i = 0; i < quantity; i++) {
+
                 // ⭐ NEW – build modified product name
                 const finalName = `${product.name} (${size}, ${ice}, ${sugar})`;
 
@@ -282,6 +281,7 @@
                 // add main product with options included
                 addToOrder(product.id, finalName, finalPrice, false);
 
+                // add add-ons
                 selectedAddons.forEach(cb => {
                     const addonId = cb.dataset.id;
                     const addonName = cb.dataset.name;
@@ -292,11 +292,7 @@
 
             // Reset UI
             selectedAddons.forEach(cb => cb.checked = false);
-
-            // Reset quantity input to 1
             if (qtyInput) qtyInput.value = 1;
-
-            // Collapse the panel
             addonsSection.classList.remove('show');
             localStorage.removeItem('selectedProduct');
 
@@ -426,6 +422,7 @@
                                             </button>
                                         </div>
 
+                                        
                                         <!-- Add-ons Section -->
                                         <div id="addons-section-<%= product.id %>" class="addons-container">
                                             <div class="drink-options">
@@ -443,6 +440,7 @@
                                             <!-- Sugar Level -->
                                             <label><strong>Sugar:</strong></label>
                                             <select id="sugarOption-<%= product.id %>">
+                                                <option value="125% Sugar">125%</option>
                                                 <option value="100% Sugar">100%</option>
                                                 <option value="75% Sugar">75%</option>
                                                 <option value="50% Sugar">50%</option>
