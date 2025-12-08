@@ -4,112 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Menu</title>
-  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" id="mainStyleSheet" href="/styles.css">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <style>
-    * { box-sizing: border-box; }
-
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: #f8f4f4;
-      margin: 0;
-      color: #111;
-    }
-
-    .menu-container {
-      max-width: 1200px;
-      margin: 24px auto;
-      padding: 0 24px;
-    }
-
-    .toolbar {
-      display:flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-
-    /* --- FORCE 3 COLUMNS ON DESKTOP --- */
-    .menu-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr)); /* 3 columns */
-      gap: 24px;
-      align-items: stretch;
-    }
-
-    /* Tablet: 2 columns */
-    @media (max-width: 1024px) {
-      .menu-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    }
-
-    /* Mobile: 1 column */
-    @media (max-width: 640px) {
-      .menu-grid { grid-template-columns: 1fr; }
-    }
-
-    .card {
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      padding: 12px;
-      background: #fff;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      transition: transform 0.1s ease-in-out;
-      display: flex;
-      flex-direction: column;
-    }
-    .card:hover { transform: translateY(-3px); }
-
-    .card img {
-      width: 100%;
-      height: 180px;
-      object-fit: cover;
-      border-radius: 10px;
-    }
-
-    .card h3 {
-      margin: 10px 0 6px;
-      font-size: 16px;
-      font-weight: 600;
-      line-height: 1.3;
-    }
-
-    .price {
-      font-weight: 600;
-      margin: 0 0 8px;
-    }
-
-    .calories {
-      margin: 0 0 12px;
-      color: #6b7280;
-      font-size: 14px;
-    }
-
-    .add-btn {
-      margin-top: auto;
-      width: 100%;
-      padding: 10px;
-      border-radius: 10px;
-      border: none;
-      background: #111;
-      color: #fff;
-      cursor: pointer;
-      font-weight: 500;
-    }
-    .add-btn:hover { background: #333; }
-
-    .cancel-order {
-      display: inline-block;
-      margin: 24px;
-      background: #ffe5e5;
-      padding: 16px 24px;
-      border-radius: 10px;
-      color: #000;
-      text-decoration: none;
-      font-weight: 500;
-    }
-
-    h1 { margin: 0; }
-  </style>
 </head>
 
 <body>
@@ -123,6 +19,9 @@
         
     </div>
     <ul class="nav-links">
+        <li><a href="javascript:void(0)" onclick="toggleStyleSheet()" style="display: flex; align-items: center; justify-content: center;">
+            <img src="/brightness.png" style="width: 40px;">
+        </a></li>
         <li>
             <button class="speaker-btn" id="textToSpeechBtn">
                 <img src="/Muted.png" alt="Text-to-Speech" class="TextToSpeech-img" id="speakerImg">
@@ -147,7 +46,7 @@
 
   <main class="menu-container" style="overflow-y: auto;">
     <div class="toolbar">
-      <h1>Menu</h1>
+      <h1 class="menuH1">Menu</h1>
       <div>
         <button id="fontUp" type="button">A+</button>
         <button id="fontDown" type="button">A−</button>
@@ -157,7 +56,7 @@
     <% if (items && items.length > 0) { %>
       <section class="menu-grid" aria-label="Drinks list">
         <% items.forEach(item => { %>
-          <article class="card" tabindex="0" aria-labelledby="title-<%= item.id %>">
+          <article class="menu-card" tabindex="0" aria-labelledby="title-<%= item.id %>">
             <% if (item.img_url) { %>
               <img src="<%= item.img_url %>" alt="<%= item.name %>" />
             <% } %>
@@ -243,5 +142,6 @@
   <script src="/tts.js"></script>
   <script src="/accountDropdown.js"></script>
   <script src="/weather.js"></script>
+  <script src="/style_sheet.js"></script>
 </body>
 </html>
