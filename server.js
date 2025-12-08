@@ -746,6 +746,9 @@ app.post('/checkout', async (req, res) => {
             WHERE order_item_id = $2`,
             [newAddonString, previousOrderItemID]
           );
+
+          const productItem = { product_name: " + " + addonName, product_price: productPrice };
+          items.push(productItem);
         }
         continue;
       } else {
