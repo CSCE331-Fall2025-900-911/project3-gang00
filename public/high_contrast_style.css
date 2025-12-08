@@ -1113,10 +1113,11 @@ select[type="category"]{
 .product-name {
     font-weight: bold;
     font-size: 1rem;
+    color: #000;
 }
 
 .product-price {
-    color: #444;
+    color: #000;
     font-size: 0.9rem;
 }
 
