@@ -1336,53 +1336,53 @@ select[type="category"]{
 }
 
 .drink-options label {
-    display: block;
-    margin-top: 10px;
-    font-weight: 600;
-    color: #333;
-    font-size: 0.95rem;
+  display: block;
+  margin-top: 10px;
+  font-weight: 600;
+  color: #333;
+  font-size: 0.95rem;
 }
 
 .drink-options select {
-    width: 100%;
-    padding: 10px 12px;
-    margin-top: 5px;
-    border-radius: 8px;
-    border: 1.5px solid #ddd;
-    background: #fafafa;
-    font-family: 'Poppins', sans-serif;
-    font-size: 0.95rem;
-    transition: all 0.2s ease;
-    cursor: pointer;
+  width: 100%;
+  padding: 10px 12px;
+  margin-top: 5px;
+  border-radius: 8px;
+  border: 1.5px solid #ddd;
+  background: #fafafa;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
 }
 
 .drink-options select:hover {
-    border-color: #d9534f;
-    background: #fff;
+  border-color: #d9534f;
+  background: #fff;
 }
 
 .drink-options select:focus {
-    outline: none;
-    border-color: #d9534f;
-    box-shadow: 0 0 6px rgba(217, 83, 79, 0.35);
+  outline: none;
+  border-color: #d9534f;
+  box-shadow: 0 0 6px rgba(217, 83, 79, 0.35);
 }
 
 .drink-options {
-    padding: 15px;
-    margin-bottom: 15px;
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.08);
-    animation: fadeIn 0.25s ease;
+  padding: 15px;
+  margin-bottom: 15px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+  animation: fadeIn 0.25s ease;
 }
 
 .drink-options h2 {
-    margin-bottom: 10px;
-    font-size: 1.2rem;
-    color: #d9534f;
+  margin-bottom: 10px;
+  font-size: 1.2rem;
+  color: #d9534f;
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(5px); }
-    to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
