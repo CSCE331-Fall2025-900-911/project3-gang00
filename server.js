@@ -148,6 +148,15 @@ passport.use('employee-local', new LocalStrategy(
 
 // Home
 app.get('/', (req, res) => {
+  if (req.isAuthenticated()) {
+    return req.logout(err => {
+      if (err) { return res.json({ success: false, message: 'Logout Failed' }); }
+      req.session.destroy(err2 => {
+        if (err2) { console.error(err2); }
+        return res.redirect('/');
+      });
+    });
+  }
   res.render('portal');
 });
 
@@ -607,12 +616,65 @@ app.get('/order', async (req, res) => {
   }
 });
 
+// ----- Employee Order Page ------ //
+app.get('/employee/order', async (req, res) => {
+  try {
+    const categoriesQuery = 'SELECT category_id, category_name FROM categories;';
+    const { rows: categories } = await pool.query(categoriesQuery);
+
+    const productsQuery = `
+      SELECT 
+        products.product_id AS id,
+        products.product_name AS name, 
+        products.product_price AS price, 
+        products.category_id, 
+        categories.category_name AS category,
+        products.image_address as image
+      FROM products
+      JOIN categories ON products.category_id = categories.category_id
+      ORDER BY categories.category_id;
+    `;
+    const { rows: products } = await pool.query(productsQuery);
+
+    const addonsQuery = `
+      SELECT 
+        addon_id AS id,
+        addon_name AS name,
+        addon_price AS price
+      FROM addons
+      WHERE is_available = true;
+    `;
+    const addons = (await pool.query(addonsQuery)).rows.map(a => ({
+      ...a,
+      price: parseFloat(a.price),
+    }));
+
+    const groupedProducts = categories.map(category => ({
+      category: category.category_name,
+      categoryId: category.category_id,
+      products: products.filter(p => p.category_id === category.category_id),
+    }));
+
+    const selectedCategory = req.query.category || null;
+
+    if (req.isAuthenticated() && req.user.customer_id !== undefined) {
+      return res.render('employeeOrder', { groupedProducts: groupedProducts, selectedCategory: selectedCategory, addons: addons, user: req.user });
+    }
+    res.render('employeeOrder', { groupedProducts: groupedProducts, selectedCategory: selectedCategory, addons: addons, user: null });
+  } catch (err) {
+    console.error('DB error:', err);
+    res.status(500).send('Database query failed');
+  }
+});
+
 // -------- Checkout Route --------
 app.post('/checkout', async (req, res) => {
   const { orderItems, subtotal, currentPoints, pointsRedeemed, pointsEarned, email} = req.body;
 
   if (!email) {
-    return res.status(400).json({ success: false, message: 'Enter an email to recieve your reciept!' });
+    // don't actually do anything
+    // email = null;
+    //return res.status(400).json({ success: false, message: 'Enter an email to recieve your reciept!' });
   }
 
   // Validate input
@@ -742,7 +804,7 @@ app.post('/checkout', async (req, res) => {
       }
 
     // now send email with order reciept to customer (if specified)
-    if (email !== null) {
+    if (email) {
       const htmlContent = buildReceiptHtml(order_id, items, subtotal);
       await sendEmail(email, "Your ShareTea Reciept", htmlContent);
     }
@@ -757,6 +819,56 @@ app.post('/checkout', async (req, res) => {
     client.release();
   }
 });
+
+// This is now back!
+function buildReceiptHtml(orderId, items, subtotal) {
+  const itemsHtml = items.map(item =>
+    `<tr>
+      <td>${item.product_name}</td>
+      <td style="text-align:right;">$${item.product_price.toFixed(2)}</td>
+    </tr>`
+  ).join("");
+
+  return `
+    <h2>Receipt for Order #${orderId}</h2>
+    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th>Item/Add-on</th>
+          <th>Price</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${itemsHtml}
+      </tbody>
+    </table>
+    <p><strong>Total: $${subtotal.toFixed(2)}</strong></p>
+    <p>Thank you for your order!</p>
+  `;
+}
+
+async function sendEmail(toEmail, subject, htmlContent) {
+  const MAILGUN_DOMAIN = "mg.sharetea.store"; // domain that I acquired    
+  const MAILGUN_API_KEY = process.env.EMAIL_API_KEY;    // Mailgun private API key
+
+  const params = new URLSearchParams();
+  params.append("from", "ShareTea POS <no-reply@mg.sharetea.store>");
+  params.append("to", toEmail);
+  params.append("subject", subject);
+  params.append("html", htmlContent);
+
+  const res = await fetch(`https://api.mailgun.net/v3/${MAILGUN_DOMAIN}/messages`, {
+    method: "POST",
+    headers: {
+      "Authorization": "Basic " + Buffer.from(`api:${MAILGUN_API_KEY}`).toString("base64"),
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    body: params
+  });
+
+  const data = await res.text(); 
+  console.log("Mailgun response:", data);
+}
 
 // -------- Kitchen Routes -------- //
 app.get('/employee/kitchen', async (req, res) => {

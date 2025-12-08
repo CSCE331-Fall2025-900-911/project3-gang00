@@ -1,5 +1,5 @@
 const form = document.getElementById('signin-form');
-form.addEventListener('submit', e => {
+form.addEventListener('submit', (e) => {
     e.preventDefault();
 
     const role = form.elements['role'].value;

@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Order</title>
-    <link rel="stylesheet" id="mainStyleSheet" href="styles.css">
+    <title>Cashier</title>
+    <link rel="stylesheet" href="/styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     
     <script>
@@ -196,7 +196,7 @@
                         alert(`Order placed successfully! Order ID: ${data.order_id}`);
                         clearOrder();
                         document.getElementById("confirmModal").classList.add("hidden");
-                        window.location.href = "/kiosk";
+                        window.location.href = "/employee";
                     } else {
                         alert("Checkout failed: " + data.message);
                     }
@@ -252,6 +252,7 @@
                 ? selectedProduct
                 : null;
             if (!product) {
+                // fallback: sometimes we call addProductWithAddons without selectedProduct, abort safely
                 console.warn('No selectedProduct found for productId', productId);
                 return;
             }
@@ -270,6 +271,7 @@
             const addonsSection = document.getElementById(`addons-section-${productId}`);
             const selectedAddons = Array.from(addonsSection.querySelectorAll('.addon-checkbox:checked'));
 
+            // Add product + addons for each quantity unit
             for (let i = 0; i < quantity; i++) {
                 // ⭐ NEW – build modified product name
                 const finalName = `${product.name} (${size}, ${ice}, ${sugar})`;
@@ -290,7 +292,11 @@
 
             // Reset UI
             selectedAddons.forEach(cb => cb.checked = false);
+
+            // Reset quantity input to 1
             if (qtyInput) qtyInput.value = 1;
+
+            // Collapse the panel
             addonsSection.classList.remove('show');
             localStorage.removeItem('selectedProduct');
 
@@ -372,23 +378,9 @@
             <ul>
                 <% groupedProducts.forEach(group => { %>
                     <li>
-                        <a href="/order?category=<%= group.categoryId %>"><%= group.category %></a>
+                        <a href="/employee/order?category=<%= group.categoryId %>"><%= group.category %></a>
                     </li>
                 <% }); %>
-                <li class="lang-dropdown no-translate">
-                    <button class="translate-btn" id="translateBtn">
-                        <img src="/Translate.png" alt="Translate" class="Translate-img" id="translateImg">
-                    </button>
-                    <div id="langMenu" class="lang-menu hidden">
-                        <select id="langSel" aria-label="Select language">
-                          <option value="en" selected>English</option>
-                          <option value="zh">中文</option>
-                          <option value="es">Español</option>
-                          <option value="fr">Français</option>
-                          <option value="ja">日本語</option>
-                        </select>
-                    </div>
-                </li>
             </ul>
         </div>
 
@@ -402,7 +394,7 @@
                         <ul>
                             <% selectedGroup.products.forEach((product) => { %>
                                 <li class="product-item">
-                                    <img src="<%= product.image %>" alt="<%= product.name %>" class="product-image">
+                                    <!-- <img src="<%= product.image %>" alt="<%= product.name %>" class="product-image"> -->
 
                                     <div class="product-center">
                                         <span class="product-name"><%= product.name %></span>
@@ -420,7 +412,6 @@
                                             </button>
                                         </div>
 
-                                        
                                         <!-- Add-ons Section -->
                                         <div id="addons-section-<%= product.id %>" class="addons-container">
                                             <div class="drink-options">
@@ -500,12 +491,11 @@
             <button class="checkout"onclick="checkoutOrder()">Checkout</button>
         </div>
         <button class="clear-order" onclick="clearOrder()">Clear Order</button>
-        <button class="cancel-order" onclick="clearOrder(); window.location.href='/kiosk'">Cancel Order</button>
+        <button class="cancel-order" onclick="clearOrder(); window.location.href='/employee'">Cancel Order</button>
     </div>
 
     <script type="module" src="/langSelect.js"></script>
     <script src="/index.js"></script>
-    <script src="/style_sheet.js"></script>
 
     <div id="confirmModal" class="modal-order hidden">
         <div class="modal-order-content">
@@ -532,13 +522,13 @@
                 <div class="modal-order-buttons">
                     <button id="confirmYes" type="button" style="padding: 8px 16px; border: none; background: #d9534f; color: white; border-radius: 6px; cursor: pointer;">Confirm</button>
                     
-                    <% if (user) { %>
+                    <!-- <% if (user) { %>
                         <button id="confirmPoints" type="button" style="padding: 8px 16px; border: none; background: #d9534f; color: white; border-radius: 6px; cursor: pointer;">Use Points</button>
                     <% } else { %>
                         <button type="button" style="padding: 8px 16px; border: none; background: #aaa; color: white; border-radius: 6px; cursor: not-allowed;" disabled>
                             Log in to Use Points
                         </button>
-                    <% } %>
+                    <% } %> -->
 
                     <button id="confirmNo" type="button" style="padding: 8px 16px; border: 1px solid #ccc; background: white; border-radius: 6px; cursor: pointer;">Cancel</button>
                 </div>
