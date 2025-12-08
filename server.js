@@ -612,7 +612,9 @@ app.post('/checkout', async (req, res) => {
   const { orderItems, subtotal, currentPoints, pointsRedeemed, pointsEarned, email} = req.body;
 
   if (!email) {
-    return res.status(400).json({ success: false, message: 'Enter an email to recieve your reciept!' });
+    // don't actually do anything
+    // email = null;
+    //return res.status(400).json({ success: false, message: 'Enter an email to recieve your reciept!' });
   }
 
   // Validate input
@@ -753,7 +755,7 @@ app.post('/checkout', async (req, res) => {
       }
 
     // now send email with order reciept to customer (if specified)
-    if (email !== null) {
+    if (email) {
       const htmlContent = buildReceiptHtml(order_id, items, subtotal);
       await sendEmail(email, "Your ShareTea Reciept", htmlContent);
     }

@@ -527,6 +527,8 @@ input:focus{
 
 .category-bar a {
     text-decoration: none;
+    font-size: large;
+    font-weight: 500;
     color: black;
     padding: 0.5rem 1rem;
     transition: background-color 0.3s, color 0.3s;
@@ -671,7 +673,7 @@ input:focus{
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 999;
+    z-index: 2000;
 }
 
 .modal-order.hidden {
@@ -680,12 +682,12 @@ input:focus{
 
 .modal-order-content {
     background: white;
-    padding: 20px;
+    padding: 40px;
     border-radius: 12px;
-    width: 350px;
+    width: 450px;
     max-height: 70vh;
     overflow-y: auto;
-    text-align: center;
+    text-align: center; 
 }
 
 .modal-order-buttons {
@@ -1033,8 +1035,8 @@ select[type="category"]{
 }
 
 .product-image {
-    width: 120px;
-    height: 120px;
+    width: 150px;
+    height: 150px;
     object-fit: cover;
     border-radius: 8px;
 }
