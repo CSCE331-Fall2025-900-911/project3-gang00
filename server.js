@@ -769,6 +769,7 @@ app.post('/checkout', async (req, res) => {
   }
 });
 
+// This is now back!
 function buildReceiptHtml(orderId, items, subtotal) {
   const itemsHtml = items.map(item =>
     `<tr>
