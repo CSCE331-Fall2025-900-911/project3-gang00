@@ -981,7 +981,16 @@ app.post('/employee/kitchen/complete-order', async (req, res) => {
 const TRANSLATE_ENABLED = (process.env.TRANSLATE_ENABLED || 'false') === 'true';
 const PROJECT_ID = process.env.PROJECT_ID;
 const GCP_LOCATION = process.env.GCP_LOCATION || 'global';
-const translateClient = new translateV3.TranslationServiceClient(); // connect the translate server
+
+const translateClient = new translateV3.TranslationServiceClient({
+  projectId: PROJECT_ID,
+  credentials: {
+    client_email: process.env.GOOGLE_CLIENT_EMAIL,
+    // if PRIVATE_KEY has literal "\n" sequences, convert them to real newlines
+    private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+  },
+});
+
 const PARENT = `projects/${PROJECT_ID}/locations/${GCP_LOCATION}`;
 
 // A simple cache for translation
