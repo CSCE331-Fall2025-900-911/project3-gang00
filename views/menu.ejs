@@ -46,28 +46,27 @@
 
   <main class="menu-container" style="overflow-y: auto;">
     <div class="toolbar">
-      <h1 class="menuH1">Menu</h1>
       <div>
         <button id="fontUp" type="button">A+</button>
         <button id="fontDown" type="button">A−</button>
       </div>
     </div>
 
-    <% if (items && items.length > 0) { %>
-      <section class="menu-grid" aria-label="Drinks list">
-        <% items.forEach(item => { %>
-          <article class="menu-card" tabindex="0" aria-labelledby="title-<%= item.id %>">
-            <% if (item.img_url) { %>
-              <img src="<%= item.img_url %>" alt="<%= item.name %>" />
+    <% if (data && data.length > 0) { %>
+      <% data.forEach(category => { %>
+        <h1 class="menuH1" style="margin-top: 40px;"><%= category.category_name %></h1>
+        <section class="menu-grid" aria-label="Drinks list">
+        <% category.products.forEach(item => { %>
+          <article class="menu-card" tabindex="0" aria-labelledby="title-<%= item.product_id %>">
+            <% if (item.image_address) { %>
+              <img src="<%= item.image_address %>" alt="<%= item.product_name %>"/>
             <% } %>
-            <h3 id="title-<%= item.id %>"><%= item.name %></h3>
-            <p class="price">$<%= Number(item.price).toFixed(2) %></p>
-            <% if (item.calories) { %>
-              <p class="calories"><%= item.calories %> cal</p>
-            <% } %>
+            <h3 id="title-<%= item.product_id %>"><%= item.product_name %></h3>
+            <p class="price">$<%= Number(item.product_price).toFixed(2) %></p>
           </article>
-        <% }) %>
+        <% }); %>
       </section>
+      <% }); %>
     <% } else { %>
       <p>No menu items found.</p>
     <% } %>
