@@ -535,30 +535,26 @@ app.get('/menu', async (req, res) => {
   }
 
   try {
-    const { rows } = await pool.query('SELECT * FROM products;');
+    const { rows: categories } = await pool.query('SELECT * FROM categories');
 
-    const items = rows.map(r => {
-      const name = (r.product_name || '').toLowerCase();
-
-      // choose a local image based on keywords; defaults to milk-tea
-      let imageFile = 'milk-tea.jpg';
-      if (name.includes('thai')) imageFile = 'thai.jpg';
-      else if (name.includes('taro')) imageFile = 'taro.jpg';
-      else if (name.includes('mango')) imageFile = 'mango.jpg';
-
-      return {
-        id: r.product_id,
-        name: r.product_name,
-        price: Number(r.product_price),
-        tags: r.category_id,          // placeholder; change later if you add real tags
-        img_url: `/img/${imageFile}`, // CORRECT path; served from /public/img
-      };
-    });
+    const data = await Promise.all(
+      categories.map(async category => {
+        const { rows: products } = await pool.query(
+          'SELECT * FROM products WHERE category_id = $1;',
+          [category.category_id]
+        );
+        
+        return {
+          category_name: category.category_name,
+          products
+        };
+      })
+    );
 
     if (req.isAuthenticated() && (req.user.customer_id !== undefined)) {
-      return res.render('menu', { items: items, user: req.user });
+      return res.render('menu', { data: data, user: req.user });
     }
-    res.render('menu', { items: items, user: null });
+    res.render('menu', { data: data, user: null });
   } catch (err) {
     console.error('DB error:', err);
     res.status(500).send('Database query failed');
