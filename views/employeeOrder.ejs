@@ -260,6 +260,7 @@
             // ⭐ NEW – Read ice/sugar/size selections
             const ice = document.getElementById(`iceOption-${productId}`).value;
             const sugar = document.getElementById(`sugarOption-${productId}`).value;
+            const temp = document.getElementById(`tempOption-${productId}`).value;
 
             const sizeSelect = document.getElementById(`sizeOption-${productId}`);
             const size = sizeSelect.value;
@@ -274,7 +275,7 @@
             // Add product + addons for each quantity unit
             for (let i = 0; i < quantity; i++) {
                 // ⭐ NEW – build modified product name
-                const finalName = `${product.name} (${size}, ${ice}, ${sugar})`;
+                const finalName = `${product.name} (${size}, ${ice}, ${sugar}, ${temp})`;
 
                 // ⭐ NEW – include size price
                 const finalPrice = product.price + sizeUpcharge;
@@ -366,7 +367,7 @@
 
 
         // Load order data on page load
-        window.onload = loadOrder;
+        window.addEventListener("DOMContentLoaded", loadOrder);
     </script>
 </head>
 <body>
@@ -435,6 +436,13 @@
                                                 <option value="50% Sugar">50%</option>
                                                 <option value="25% Sugar">25%</option>
                                                 <option value="0% Sugar">0%</option>
+                                            </select>
+
+                                            <!-- Temperature Level -->
+                                            <label><strong>Temperature:</strong></label>
+                                            <select id="tempOption-<%= product.id %>">
+                                                <option value="Cold">Cold</option>
+                                                <option value="Hot">Hot</option>
                                             </select>
 
                                             <!-- Size -->
